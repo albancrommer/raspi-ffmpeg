@@ -16,6 +16,6 @@ while read line ; do
  	else	
 		FILE="$line"
 	fi
-	mv $line "$DEST/$FILE"
+	cp $line "$DEST/$FILE"
     fi
 done < install.log
