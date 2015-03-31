@@ -16,6 +16,7 @@ while read line ; do
  	else	
 		FILE="$line"
 	fi
-	cp $line "$DEST/$FILE"
+	mkdir -p "$DEST"
+	rsync -a "$line" "$DEST/$FILE"
     fi
 done < install.log
