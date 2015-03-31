@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "FFSERVER 1"
-.TH FFSERVER 1 "2015-03-17" " " " "
+.TH FFSERVER 1 " " " " " "
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -191,7 +191,7 @@ the \s-1HTTP\s0 server (configured through the \fBHTTPPort\fR option), and
 configuration file.
 .PP
 Each feed is associated to a file which is stored on disk. This stored
-file is used to allow to send pre-recorded data to a player as fast as
+file is used to send pre-recorded data to a player as fast as
 possible when new content is added in real-time to the stream.
 .PP
 A \*(L"live-stream\*(R" or \*(L"stream\*(R" is a resource published by
@@ -451,6 +451,10 @@ Match the stream by stream id (e.g. \s-1PID\s0 in MPEG-TS container).
 Matches streams with the metadata tag \fIkey\fR having the specified value. If
 \&\fIvalue\fR is not given, matches streams that contain the given tag with any
 value.
+.IP "\fBu\fR" 4
+.IX Item "u"
+Matches streams with usable configuration, the codec must be defined and the
+essential information such as video dimension or audio sample rate must be present.
 .Sp
 Note that in \fBffmpeg\fR, matching by metadata will only work properly for
 input files.
@@ -760,8 +764,44 @@ Possible flags for this option are:
 .IP "\fB\-opencl_bench\fR" 4
 .IX Item "-opencl_bench"
 .PD
-Benchmark all available OpenCL devices and show the results. This option
-is only available when FFmpeg has been compiled with \f(CW\*(C`\-\-enable\-opencl\*(C'\fR.
+This option is used to benchmark all available OpenCL devices and print the
+results. This option is only available when FFmpeg has been compiled with
+\&\f(CW\*(C`\-\-enable\-opencl\*(C'\fR.
+.Sp
+When FFmpeg is configured with \f(CW\*(C`\-\-enable\-opencl\*(C'\fR, the options for the
+global OpenCL context are set via \fB\-opencl_options\fR. See the
+\&\*(L"OpenCL Options\*(R" section in the ffmpeg-utils manual for the complete list of
+supported options. Amongst others, these options include the ability to select
+a specific platform and device to run the OpenCL code on. By default, FFmpeg
+will run on the first device of the first platform. While the options for the
+global OpenCL context provide flexibility to the user in selecting the OpenCL
+device of their choice, most users would probably want to select the fastest
+OpenCL device for their system.
+.Sp
+This option assists the selection of the most efficient configuration by
+identifying the appropriate device for the user's system. The built-in
+benchmark is run on all the OpenCL devices and the performance is measured for
+each device. The devices in the results list are sorted based on their
+performance with the fastest device listed first. The user can subsequently
+invoke \fBffmpeg\fR using the device deemed most appropriate via
+\&\fB\-opencl_options\fR to obtain the best performance for the OpenCL
+accelerated code.
+.Sp
+Typical usage to use the fastest OpenCL device involve the following steps.
+.Sp
+Run the command:
+.Sp
+.Vb 1
+\&        ffmpeg \-opencl_bench
+.Ve
+.Sp
+Note down the platform \s-1ID\s0 (\fIpidx\fR) and device \s-1ID\s0 (\fIdidx\fR) of the first
+i.e. fastest device in the list.
+Select the platform and device using the command:
+.Sp
+.Vb 1
+\&        ffmpeg \-opencl_options platform_idx=<pidx>:device_idx=<didx> ...
+.Ve
 .IP "\fB\-opencl_options options (\fR\fIglobal\fR\fB)\fR" 4
 .IX Item "-opencl_options options (global)"
 Set OpenCL environment options. This option is only available when

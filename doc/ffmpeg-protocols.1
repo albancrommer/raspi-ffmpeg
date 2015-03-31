@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "FFMPEG-PROTOCOLS 1"
-.TH FFMPEG-PROTOCOLS 1 "2015-02-25" " " " "
+.TH FFMPEG-PROTOCOLS 1 " " " " " "
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -195,7 +195,7 @@ Cache the input stream to temporary file. It brings seeking capability to live s
 .IX Subsection "concat"
 Physical concatenation protocol.
 .PP
-Allow to read and seek from many resource in sequence as if they were
+Read and seek from many resources in sequence as if they were
 a unique resource.
 .PP
 A \s-1URL\s0 accepted by this protocol has the syntax:
@@ -249,7 +249,7 @@ For example, to convert a \s-1GIF\s0 file given inline with \fBffmpeg\fR:
 .IX Subsection "file"
 File access protocol.
 .PP
-Allow to read from or write to a file.
+Read from or write to a file.
 .PP
 A file \s-1URL\s0 can have the form:
 .PP
@@ -286,7 +286,7 @@ time, which is valuable for files on slow medium.
 .IX Subsection "ftp"
 \&\s-1FTP\s0 (File Transfer Protocol).
 .PP
-Allow to read from or write to remote resources using \s-1FTP\s0 protocol.
+Read from or write to remote resources using \s-1FTP\s0 protocol.
 .PP
 Following syntax is required.
 .PP
@@ -498,7 +498,7 @@ be seekable, so they will fail with the \s-1MD5\s0 output protocol.
 .IX Subsection "pipe"
 \&\s-1UNIX\s0 pipe access protocol.
 .PP
-Allow to read and write from \s-1UNIX\s0 pipes.
+Read and write from \s-1UNIX\s0 pipes.
 .PP
 The accepted syntax is:
 .PP
@@ -726,7 +726,7 @@ For more information see: <\fBhttp://www.samba.org/\fR>.
 .IX Subsection "libssh"
 Secure File Transfer Protocol via libssh
 .PP
-Allow to read from or write to remote resources using \s-1SFTP\s0 protocol.
+Read from or write to remote resources using \s-1SFTP\s0 protocol.
 .PP
 Following syntax is required.
 .PP
@@ -1176,7 +1176,10 @@ externally and multiplied by 2048):
 .Ve
 .PP
 Play an \s-1AVI\s0 file directly from a \s-1TAR\s0 archive:
-subfile,,start,183241728,end,366490624,,:archive.tar
+.PP
+.Vb 1
+\&        subfile,,start,183241728,end,366490624,,:archive.tar
+.Ve
 .SS "tcp"
 .IX Subsection "tcp"
 Transmission Control Protocol.
@@ -1200,9 +1203,9 @@ Set raise error timeout, expressed in microseconds.
 .Sp
 This option is only relevant in read mode: if no data arrived in more
 than this time interval, raise error.
-.IP "\fBlisten_timeout=\fR\fImicroseconds\fR" 4
-.IX Item "listen_timeout=microseconds"
-Set listen timeout, expressed in microseconds.
+.IP "\fBlisten_timeout=\fR\fImilliseconds\fR" 4
+.IX Item "listen_timeout=milliseconds"
+Set listen timeout, expressed in milliseconds.
 .PP
 The following example shows how to setup a listening \s-1TCP\s0 connection
 with \fBffmpeg\fR, which is then accessed with \fBffplay\fR:

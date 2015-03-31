@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "FFMPEG-UTILS 1"
-.TH FFMPEG-UTILS 1 "2015-02-25" " " " "
+.TH FFMPEG-UTILS 1 " " " " " "
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -144,15 +144,15 @@ libraries and tools.
 FFmpeg adopts the following quoting and escaping mechanism, unless
 explicitly specified. The following rules are applied:
 .IP "\(bu" 4
-\&\f(CW\*(C`\*(Aq\*(C'\fR and \f(CW\*(C`\e\*(C'\fR are special characters (respectively used for
+\&\fB'\fR and \fB\e\fR are special characters (respectively used for
 quoting and escaping). In addition to them, there might be other
 special characters depending on the specific syntax where the escaping
 and quoting are employed.
 .IP "\(bu" 4
-A special character is escaped by prefixing it with a '\e'.
+A special character is escaped by prefixing it with a \fB\e\fR.
 .IP "\(bu" 4
-All characters enclosed between '' are included literally in the
-parsed string. The quote character \f(CW\*(C`\*(Aq\*(C'\fR itself cannot be quoted,
+All characters enclosed between \fB''\fR are included literally in the
+parsed string. The quote character \fB'\fR itself cannot be quoted,
 so you may need to close the quote and escape it.
 .IP "\(bu" 4
 Leading and trailing whitespaces, unless escaped or quoted, are
@@ -198,7 +198,7 @@ Escaping and quoting can be mixed together:
 \&        \*(Aq The string \*(Aq\e\*(Aqstring\e\*(Aq\*(Aq is a string \*(Aq
 .Ve
 .IP "\(bu" 4
-To include a literal \f(CW\*(C`\e\*(C'\fR you can use either escaping or quoting:
+To include a literal \fB\e\fR you can use either escaping or quoting:
 .Sp
 .Vb 1
 \&        \*(Aqc:\efoo\*(Aq can be written as c:\e\efoo
@@ -1192,7 +1192,7 @@ Return 1.0 if \fIx\fR is +/\-INFINITY, 0.0 otherwise.
 Return 1.0 if \fIx\fR is \s-1NAN\s0, 0.0 otherwise.
 .IP "\fBld(var)\fR" 4
 .IX Item "ld(var)"
-Allow to load the value of the internal variable with number
+Load the value of the internal variable with number
 \&\fIvar\fR, which was previously stored with st(\fIvar\fR, \fIexpr\fR).
 The function returns the loaded value.
 .IP "\fBlog(x)\fR" 4
@@ -1263,7 +1263,7 @@ Compute the square root of \fIexpr\fR. This is equivalent to
 Compute expression \f(CW\*(C`1/(1 + exp(4*x))\*(C'\fR.
 .IP "\fBst(var, expr)\fR" 4
 .IX Item "st(var, expr)"
-Allow to store the value of the expression \fIexpr\fR in an internal
+Store the value of the expression \fIexpr\fR in an internal
 variable. \fIvar\fR specifies the number of the variable where to
 store the value, and it is a value ranging from 0 to 9. The function
 returns the value stored in the internal variable.

@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "FFPROBE-ALL 1"
-.TH FFPROBE-ALL 1 "2015-03-17" " " " "
+.TH FFPROBE-ALL 1 " " " " " "
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -223,6 +223,10 @@ Match the stream by stream id (e.g. \s-1PID\s0 in MPEG-TS container).
 Matches streams with the metadata tag \fIkey\fR having the specified value. If
 \&\fIvalue\fR is not given, matches streams that contain the given tag with any
 value.
+.IP "\fBu\fR" 4
+.IX Item "u"
+Matches streams with usable configuration, the codec must be defined and the
+essential information such as video dimension or audio sample rate must be present.
 .Sp
 Note that in \fBffmpeg\fR, matching by metadata will only work properly for
 input files.
@@ -532,8 +536,44 @@ Possible flags for this option are:
 .IP "\fB\-opencl_bench\fR" 4
 .IX Item "-opencl_bench"
 .PD
-Benchmark all available OpenCL devices and show the results. This option
-is only available when FFmpeg has been compiled with \f(CW\*(C`\-\-enable\-opencl\*(C'\fR.
+This option is used to benchmark all available OpenCL devices and print the
+results. This option is only available when FFmpeg has been compiled with
+\&\f(CW\*(C`\-\-enable\-opencl\*(C'\fR.
+.Sp
+When FFmpeg is configured with \f(CW\*(C`\-\-enable\-opencl\*(C'\fR, the options for the
+global OpenCL context are set via \fB\-opencl_options\fR. See the
+\&\*(L"OpenCL Options\*(R" section in the ffmpeg-utils manual for the complete list of
+supported options. Amongst others, these options include the ability to select
+a specific platform and device to run the OpenCL code on. By default, FFmpeg
+will run on the first device of the first platform. While the options for the
+global OpenCL context provide flexibility to the user in selecting the OpenCL
+device of their choice, most users would probably want to select the fastest
+OpenCL device for their system.
+.Sp
+This option assists the selection of the most efficient configuration by
+identifying the appropriate device for the user's system. The built-in
+benchmark is run on all the OpenCL devices and the performance is measured for
+each device. The devices in the results list are sorted based on their
+performance with the fastest device listed first. The user can subsequently
+invoke \fBffmpeg\fR using the device deemed most appropriate via
+\&\fB\-opencl_options\fR to obtain the best performance for the OpenCL
+accelerated code.
+.Sp
+Typical usage to use the fastest OpenCL device involve the following steps.
+.Sp
+Run the command:
+.Sp
+.Vb 1
+\&        ffmpeg \-opencl_bench
+.Ve
+.Sp
+Note down the platform \s-1ID\s0 (\fIpidx\fR) and device \s-1ID\s0 (\fIdidx\fR) of the first
+i.e. fastest device in the list.
+Select the platform and device using the command:
+.Sp
+.Vb 1
+\&        ffmpeg \-opencl_options platform_idx=<pidx>:device_idx=<didx> ...
+.Ve
 .IP "\fB\-opencl_options options (\fR\fIglobal\fR\fB)\fR" 4
 .IX Item "-opencl_options options (global)"
 Set OpenCL environment options. This option is only available when
@@ -970,17 +1010,17 @@ It can assume one of the following values:
 .RS 4
 .IP "\fBc\fR" 4
 .IX Item "c"
-Perform C\-like escaping. Strings containing a newline ('\en'), carriage
-return ('\er'), a tab ('\et'), a form feed ('\ef'), the escaping
-character ('\e') or the item separator character \fI\s-1SEP\s0\fR are escaped using C\-like fashioned
-escaping, so that a newline is converted to the sequence \*(L"\en\*(R", a
-carriage return to \*(L"\er\*(R", '\e' to \*(L"\e\e\*(R" and the separator \fI\s-1SEP\s0\fR is
-converted to "\e\fI\s-1SEP\s0\fR".
+Perform C\-like escaping. Strings containing a newline (\fB\en\fR), carriage
+return (\fB\er\fR), a tab (\fB\et\fR), a form feed (\fB\ef\fR), the escaping
+character (\fB\e\fR) or the item separator character \fI\s-1SEP\s0\fR are escaped
+using C\-like fashioned escaping, so that a newline is converted to the
+sequence \fB\en\fR, a carriage return to \fB\er\fR, \fB\e\fR to \fB\e\e\fR and
+the separator \fI\s-1SEP\s0\fR is converted to \fB\e\fR\fI\s-1SEP\s0\fR.
 .IP "\fBcsv\fR" 4
 .IX Item "csv"
 Perform CSV-like escaping, as described in \s-1RFC4180\s0.  Strings
-containing a newline ('\en'), a carriage return ('\er'), a double quote
-('"'), or \fI\s-1SEP\s0\fR are enclosed in double-quotes.
+containing a newline (\fB\en\fR), a carriage return (\fB\er\fR), a double quote
+(\fB"\fR), or \fI\s-1SEP\s0\fR are enclosed in double-quotes.
 .IP "\fBnone\fR" 4
 .IX Item "none"
 Perform no escaping.
@@ -1007,7 +1047,7 @@ The description of the accepted options follows.
 Separator character used to separate the chapter, the section name, IDs and
 potential tags in the printed field key.
 .Sp
-Default value is '.'.
+Default value is \fB.\fR.
 .IP "\fBhierarchical, h\fR" 4
 .IX Item "hierarchical, h"
 Specify if the section name specification should be hierarchical. If
@@ -1026,20 +1066,21 @@ The following conventions are adopted:
 .IP "\(bu" 4
 all key and values are \s-1UTF\-8\s0
 .IP "\(bu" 4
-\&'.' is the subgroup separator
+\&\fB.\fR is the subgroup separator
 .IP "\(bu" 4
-newline, '\et', '\ef', '\eb' and the following characters are escaped
+newline, \fB\et\fR, \fB\ef\fR, \fB\eb\fR and the following characters are
+escaped
 .IP "\(bu" 4
-\&'\e' is the escape character
+\&\fB\e\fR is the escape character
 .IP "\(bu" 4
-\&'#' is the comment indicator
+\&\fB#\fR is the comment indicator
 .IP "\(bu" 4
-\&'=' is the key/value separator
+\&\fB=\fR is the key/value separator
 .IP "\(bu" 4
-\&':' is not used but usually parsed as key/value separator
+\&\fB:\fR is not used but usually parsed as key/value separator
 .PP
 This writer accepts options as a list of \fIkey\fR=\fIvalue\fR pairs,
-separated by \*(L":\*(R".
+separated by \fB:\fR.
 .PP
 The description of the accepted options follows.
 .IP "\fBhierarchical, h\fR" 4
@@ -1115,15 +1156,15 @@ libraries and tools.
 FFmpeg adopts the following quoting and escaping mechanism, unless
 explicitly specified. The following rules are applied:
 .IP "\(bu" 4
-\&\f(CW\*(C`\*(Aq\*(C'\fR and \f(CW\*(C`\e\*(C'\fR are special characters (respectively used for
+\&\fB'\fR and \fB\e\fR are special characters (respectively used for
 quoting and escaping). In addition to them, there might be other
 special characters depending on the specific syntax where the escaping
 and quoting are employed.
 .IP "\(bu" 4
-A special character is escaped by prefixing it with a '\e'.
+A special character is escaped by prefixing it with a \fB\e\fR.
 .IP "\(bu" 4
-All characters enclosed between '' are included literally in the
-parsed string. The quote character \f(CW\*(C`\*(Aq\*(C'\fR itself cannot be quoted,
+All characters enclosed between \fB''\fR are included literally in the
+parsed string. The quote character \fB'\fR itself cannot be quoted,
 so you may need to close the quote and escape it.
 .IP "\(bu" 4
 Leading and trailing whitespaces, unless escaped or quoted, are
@@ -1169,7 +1210,7 @@ Escaping and quoting can be mixed together:
 \&        \*(Aq The string \*(Aq\e\*(Aqstring\e\*(Aq\*(Aq is a string \*(Aq
 .Ve
 .IP "\(bu" 4
-To include a literal \f(CW\*(C`\e\*(C'\fR you can use either escaping or quoting:
+To include a literal \fB\e\fR you can use either escaping or quoting:
 .Sp
 .Vb 1
 \&        \*(Aqc:\efoo\*(Aq can be written as c:\e\efoo
@@ -2163,7 +2204,7 @@ Return 1.0 if \fIx\fR is +/\-INFINITY, 0.0 otherwise.
 Return 1.0 if \fIx\fR is \s-1NAN\s0, 0.0 otherwise.
 .IP "\fBld(var)\fR" 4
 .IX Item "ld(var)"
-Allow to load the value of the internal variable with number
+Load the value of the internal variable with number
 \&\fIvar\fR, which was previously stored with st(\fIvar\fR, \fIexpr\fR).
 The function returns the loaded value.
 .IP "\fBlog(x)\fR" 4
@@ -2234,7 +2275,7 @@ Compute the square root of \fIexpr\fR. This is equivalent to
 Compute expression \f(CW\*(C`1/(1 + exp(4*x))\*(C'\fR.
 .IP "\fBst(var, expr)\fR" 4
 .IX Item "st(var, expr)"
-Allow to store the value of the expression \fIexpr\fR in an internal
+Store the value of the expression \fIexpr\fR in an internal
 variable. \fIvar\fR specifies the number of the variable where to
 store the value, and it is a value ranging from 0 to 9. The function
 returns the value stored in the internal variable.
@@ -4282,7 +4323,7 @@ Reduce buffering.
 .IP "\fBprobesize\fR \fIinteger\fR \fB(\fR\fIinput\fR\fB)\fR" 4
 .IX Item "probesize integer (input)"
 Set probing size in bytes, i.e. the size of the data to analyze to get
-stream information. A higher value will allow to detect more
+stream information. A higher value will enable detecting more
 information in case it is dispersed into the stream, but will increase
 latency. Must be an integer not lesser than 32. It is 5000000 by default.
 .IP "\fBpacketsize\fR \fIinteger\fR \fB(\fR\fIoutput\fR\fB)\fR" 4
@@ -4339,7 +4380,7 @@ Default is 0.
 .IP "\fBanalyzeduration\fR \fIinteger\fR \fB(\fR\fIinput\fR\fB)\fR" 4
 .IX Item "analyzeduration integer (input)"
 Specify how many microseconds are analyzed to probe the input. A
-higher value will allow to detect more accurate information, but will
+higher value will enable detecting more accurate information, but will
 increase latency. It defaults to 5,000,000 microseconds = 5 seconds.
 .IP "\fBcryptokey\fR \fIhexadecimal string\fR \fB(\fR\fIinput\fR\fB)\fR" 4
 .IX Item "cryptokey hexadecimal string (input)"
@@ -4952,9 +4993,9 @@ The file format is as follows:
 A file consists of a header and a number of metadata tags divided into sections,
 each on its own line.
 .IP "2." 4
-The header is a ';FFMETADATA' string, followed by a version number (now 1).
+The header is a \fB;FFMETADATA\fR string, followed by a version number (now 1).
 .IP "3." 4
-Metadata tags are of the form 'key=value'
+Metadata tags are of the form \fBkey=value\fR
 .IP "4." 4
 Immediately after header follows global metadata
 .IP "5." 4
@@ -4962,22 +5003,26 @@ After global metadata there may be sections with per\-stream/per\-chapter
 metadata.
 .IP "6." 4
 A section starts with the section name in uppercase (i.e. \s-1STREAM\s0 or \s-1CHAPTER\s0) in
-brackets ('[', ']') and ends with next section or end of file.
+brackets (\fB[\fR, \fB]\fR) and ends with next section or end of file.
 .IP "7." 4
 At the beginning of a chapter section there may be an optional timebase to be
-used for start/end values. It must be in form 'TIMEBASE=num/den', where num and
-den are integers. If the timebase is missing then start/end times are assumed to
+used for start/end values. It must be in form
+\&\fBTIMEBASE=\fR\fInum\fR\fB/\fR\fIden\fR, where \fInum\fR and \fIden\fR are
+integers. If the timebase is missing then start/end times are assumed to
 be in milliseconds.
+.Sp
 Next a chapter section must contain chapter start and end times in form
-\&'START=num', 'END=num', where num is a positive integer.
+\&\fBSTART=\fR\fInum\fR, \fBEND=\fR\fInum\fR, where \fInum\fR is a positive
+integer.
 .IP "8." 4
-Empty lines and lines starting with ';' or '#' are ignored.
+Empty lines and lines starting with \fB;\fR or \fB#\fR are ignored.
 .IP "9." 4
-Metadata keys or values containing special characters ('=', ';', '#', '\e' and a
-newline) must be escaped with a backslash '\e'.
+Metadata keys or values containing special characters (\fB=\fR, \fB;\fR,
+\&\fB#\fR, \fB\e\fR and a newline) must be escaped with a backslash \fB\e\fR.
 .IP "10." 4
-Note that whitespace in metadata (e.g. foo = bar) is considered to be a part of
-the tag (in the example above key is 'foo ', value is ' bar').
+Note that whitespace in metadata (e.g. \fBfoo = bar\fR) is considered to be
+a part of the tag (in the example above key is \fBfoo\fR , value is
+ \fBbar\fR).
 .PP
 A ffmetadata file might look like this:
 .PP
@@ -5074,7 +5119,7 @@ Cache the input stream to temporary file. It brings seeking capability to live s
 .IX Subsection "concat"
 Physical concatenation protocol.
 .PP
-Allow to read and seek from many resource in sequence as if they were
+Read and seek from many resources in sequence as if they were
 a unique resource.
 .PP
 A \s-1URL\s0 accepted by this protocol has the syntax:
@@ -5128,7 +5173,7 @@ For example, to convert a \s-1GIF\s0 file given inline with \fBffmpeg\fR:
 .IX Subsection "file"
 File access protocol.
 .PP
-Allow to read from or write to a file.
+Read from or write to a file.
 .PP
 A file \s-1URL\s0 can have the form:
 .PP
@@ -5165,7 +5210,7 @@ time, which is valuable for files on slow medium.
 .IX Subsection "ftp"
 \&\s-1FTP\s0 (File Transfer Protocol).
 .PP
-Allow to read from or write to remote resources using \s-1FTP\s0 protocol.
+Read from or write to remote resources using \s-1FTP\s0 protocol.
 .PP
 Following syntax is required.
 .PP
@@ -5377,7 +5422,7 @@ be seekable, so they will fail with the \s-1MD5\s0 output protocol.
 .IX Subsection "pipe"
 \&\s-1UNIX\s0 pipe access protocol.
 .PP
-Allow to read and write from \s-1UNIX\s0 pipes.
+Read and write from \s-1UNIX\s0 pipes.
 .PP
 The accepted syntax is:
 .PP
@@ -5605,7 +5650,7 @@ For more information see: <\fBhttp://www.samba.org/\fR>.
 .IX Subsection "libssh"
 Secure File Transfer Protocol via libssh
 .PP
-Allow to read from or write to remote resources using \s-1SFTP\s0 protocol.
+Read from or write to remote resources using \s-1SFTP\s0 protocol.
 .PP
 Following syntax is required.
 .PP
@@ -6055,7 +6100,10 @@ externally and multiplied by 2048):
 .Ve
 .PP
 Play an \s-1AVI\s0 file directly from a \s-1TAR\s0 archive:
-subfile,,start,183241728,end,366490624,,:archive.tar
+.PP
+.Vb 1
+\&        subfile,,start,183241728,end,366490624,,:archive.tar
+.Ve
 .SS "tcp"
 .IX Subsection "tcp"
 Transmission Control Protocol.
@@ -6079,9 +6127,9 @@ Set raise error timeout, expressed in microseconds.
 .Sp
 This option is only relevant in read mode: if no data arrived in more
 than this time interval, raise error.
-.IP "\fBlisten_timeout=\fR\fImicroseconds\fR" 4
-.IX Item "listen_timeout=microseconds"
-Set listen timeout, expressed in microseconds.
+.IP "\fBlisten_timeout=\fR\fImilliseconds\fR" 4
+.IX Item "listen_timeout=milliseconds"
+Set listen timeout, expressed in milliseconds.
 .PP
 The following example shows how to setup a listening \s-1TCP\s0 connection
 with \fBffmpeg\fR, which is then accessed with \fBffplay\fR:
@@ -6283,7 +6331,7 @@ FFmpeg tools, or by setting the value explicitly in the device
 for programmatic use.
 .SH "INPUT DEVICES"
 .IX Header "INPUT DEVICES"
-Input devices are configured elements in FFmpeg which allow to access
+Input devices are configured elements in FFmpeg which enable accessing
 the data coming from a multimedia device attached to your system.
 .PP
 When you configure your FFmpeg build, all the supported input devices
@@ -6429,6 +6477,74 @@ Record video from the system default video device using the pixel format bgr0 an
 .SS "bktr"
 .IX Subsection "bktr"
 \&\s-1BSD\s0 video input device.
+.SS "decklink"
+.IX Subsection "decklink"
+The decklink input device provides capture capabilities for Blackmagic
+DeckLink devices.
+.PP
+To enable this input device, you need the Blackmagic DeckLink \s-1SDK\s0 and you
+need to configure with the appropriate \f(CW\*(C`\-\-extra\-cflags\*(C'\fR
+and \f(CW\*(C`\-\-extra\-ldflags\*(C'\fR.
+On Windows, you need to run the \s-1IDL\s0 files through \fBwidl\fR.
+.PP
+DeckLink is very picky about the formats it supports. Pixel format is
+uyvy422 or v210, framerate and video size must be determined for your device with
+\&\fB\-list_formats 1\fR. Audio sample rate is always 48 kHz and the number
+of channels can be 2, 8 or 16.
+.PP
+\fIOptions\fR
+.IX Subsection "Options"
+.IP "\fBlist_devices\fR" 4
+.IX Item "list_devices"
+If set to \fBtrue\fR, print a list of devices and exit.
+Defaults to \fBfalse\fR.
+.IP "\fBlist_formats\fR" 4
+.IX Item "list_formats"
+If set to \fBtrue\fR, print a list of supported formats and exit.
+Defaults to \fBfalse\fR.
+.IP "\fBbm_v210\fR" 4
+.IX Item "bm_v210"
+If set to \fB1\fR, video is captured in 10 bit v210 instead
+of uyvy422. Not all Blackmagic devices support this option.
+.PP
+\fIExamples\fR
+.IX Subsection "Examples"
+.IP "\(bu" 4
+List input devices:
+.Sp
+.Vb 1
+\&        ffmpeg \-f decklink \-list_devices 1 \-i dummy
+.Ve
+.IP "\(bu" 4
+List supported formats:
+.Sp
+.Vb 1
+\&        ffmpeg \-f decklink \-list_formats 1 \-i \*(AqIntensity Pro\*(Aq
+.Ve
+.IP "\(bu" 4
+Capture video clip at 1080i50 (format 11):
+.Sp
+.Vb 1
+\&        ffmpeg \-f decklink \-i \*(AqIntensity Pro@11\*(Aq \-acodec copy \-vcodec copy output.avi
+.Ve
+.IP "\(bu" 4
+Capture video clip at 1080i50 10 bit:
+.Sp
+.Vb 1
+\&        ffmpeg \-bm_v210 1 \-f decklink \-i \*(AqUltraStudio Mini Recorder@11\*(Aq \-acodec copy \-vcodec copy output.avi
+.Ve
+.IP "\(bu" 4
+Capture video clip at 720p50 with 32bit audio:
+.Sp
+.Vb 1
+\&        ffmpeg \-bm_audiodepth 32 \-f decklink \-i \*(AqUltraStudio Mini Recorder@14\*(Aq \-acodec copy \-vcodec copy output.avi
+.Ve
+.IP "\(bu" 4
+Capture video clip at 576i50 with 8 audio channels:
+.Sp
+.Vb 1
+\&        ffmpeg \-bm_channels 8 \-f decklink \-i \*(AqUltraStudio Mini Recorder@3\*(Aq \-acodec copy \-vcodec copy output.avi
+.Ve
 .SS "dshow"
 .IX Subsection "dshow"
 Windows DirectShow input device.
@@ -6446,7 +6562,7 @@ The input name should be in the format:
 .Ve
 .PP
 where \fI\s-1TYPE\s0\fR can be either \fIaudio\fR or \fIvideo\fR,
-and \fI\s-1NAME\s0\fR is the device's name.
+and \fI\s-1NAME\s0\fR is the device's name or alternative name..
 .PP
 \fIOptions\fR
 .IX Subsection "Options"
@@ -6497,6 +6613,61 @@ default buffer size (typically some multiple of 500ms).
 Setting this value too low can degrade performance.
 See also
 <\fBhttp://msdn.microsoft.com/en\-us/library/windows/desktop/dd377582(v=vs.85).aspx\fR>
+.IP "\fBvideo_pin_name\fR" 4
+.IX Item "video_pin_name"
+Select video capture pin to use by name or alternative name.
+.IP "\fBaudio_pin_name\fR" 4
+.IX Item "audio_pin_name"
+Select audio capture pin to use by name or alternative name.
+.IP "\fBcrossbar_video_input_pin_number\fR" 4
+.IX Item "crossbar_video_input_pin_number"
+Select video input pin number for crossbar device. This will be
+routed to the crossbar device's Video Decoder output pin.
+Note that changing this value can affect future invocations
+(sets a new default) until system reboot occurs.
+.IP "\fBcrossbar_audio_input_pin_number\fR" 4
+.IX Item "crossbar_audio_input_pin_number"
+Select audio input pin number for crossbar device. This will be
+routed to the crossbar device's Audio Decoder output pin.
+Note that changing this value can affect future invocations
+(sets a new default) until system reboot occurs.
+.IP "\fBshow_video_device_dialog\fR" 4
+.IX Item "show_video_device_dialog"
+If set to \fBtrue\fR, before capture starts, popup a display dialog
+to the end user, allowing them to change video filter properties
+and configurations manually.
+Note that for crossbar devices, adjusting values in this dialog
+may be needed at times to toggle between \s-1PAL\s0 (25 fps) and \s-1NTSC\s0 (29.97)
+input frame rates, sizes, interlacing, etc.  Changing these values can
+enable different scan rates/frame rates and avoiding green bars at
+the bottom, flickering scan lines, etc.
+Note that with some devices, changing these properties can also affect future
+invocations (sets new defaults) until system reboot occurs.
+.IP "\fBshow_audio_device_dialog\fR" 4
+.IX Item "show_audio_device_dialog"
+If set to \fBtrue\fR, before capture starts, popup a display dialog
+to the end user, allowing them to change audio filter properties
+and configurations manually.
+.IP "\fBshow_video_crossbar_connection_dialog\fR" 4
+.IX Item "show_video_crossbar_connection_dialog"
+If set to \fBtrue\fR, before capture starts, popup a display
+dialog to the end user, allowing them to manually
+modify crossbar pin routings, when it opens a video device.
+.IP "\fBshow_audio_crossbar_connection_dialog\fR" 4
+.IX Item "show_audio_crossbar_connection_dialog"
+If set to \fBtrue\fR, before capture starts, popup a display
+dialog to the end user, allowing them to manually
+modify crossbar pin routings, when it opens an audio device.
+.IP "\fBshow_analog_tv_tuner_dialog\fR" 4
+.IX Item "show_analog_tv_tuner_dialog"
+If set to \fBtrue\fR, before capture starts, popup a display
+dialog to the end user, allowing them to manually
+modify \s-1TV\s0 channels and frequencies.
+.IP "\fBshow_analog_tv_tuner_audio_dialog\fR" 4
+.IX Item "show_analog_tv_tuner_audio_dialog"
+If set to \fBtrue\fR, before capture starts, popup a display
+dialog to the end user, allowing them to manually
+modify \s-1TV\s0 audio (like mono vs. stereo, Language A,B or C).
 .PP
 \fIExamples\fR
 .IX Subsection "Examples"
@@ -6529,6 +6700,19 @@ Print the list of supported options in selected device and exit:
 .Sp
 .Vb 1
 \&        $ ffmpeg \-list_options true \-f dshow \-i video="Camera"
+.Ve
+.IP "\(bu" 4
+Specify pin names to capture by name or alternative name, specify alternative device name:
+.Sp
+.Vb 1
+\&        $ ffmpeg \-f dshow \-audio_pin_name "Audio Out" \-video_pin_name 2 \-i video=video="@device_pnp_\e\e?\epci#ven_1a0a&dev_6200&subsys_62021461&rev_01#4&e2c7dd6&0&00e1#{65e8773d\-8f56\-11d0\-a3b9\-00a0c9223196}\e{ca465100\-deb0\-4d59\-818f\-8c477184adf6}":audio="Microphone"
+.Ve
+.IP "\(bu" 4
+Configure a crossbar device, specifying crossbar pins, allow user to adjust video capture properties at startup:
+.Sp
+.Vb 2
+\&        $ ffmpeg \-f dshow \-show_video_device_dialog true \-crossbar_video_input_pin_number 0
+\&             \-crossbar_audio_input_pin_number 3 \-i video="AVerMedia BDA Analog Capture":audio="AVerMedia BDA Analog Capture"
 .Ve
 .SS "dv1394"
 .IX Subsection "dv1394"
@@ -6822,20 +7006,55 @@ Dump decoded frames to images and closed captions to a file (experimental):
 .Ve
 .SS "libcdio"
 .IX Subsection "libcdio"
-Audio-CD input device based on cdio.
+Audio-CD input device based on libcdio.
 .PP
 To enable this input device during configuration you need libcdio
-installed on your system. Requires the configure option
+installed on your system. It requires the configure option
 \&\f(CW\*(C`\-\-enable\-libcdio\*(C'\fR.
 .PP
 This device allows playing and grabbing from an Audio-CD.
 .PP
-For example to copy with \fBffmpeg\fR the entire Audio-CD in /dev/sr0,
+For example to copy with \fBffmpeg\fR the entire Audio-CD in \fI/dev/sr0\fR,
 you may run the command:
 .PP
 .Vb 1
 \&        ffmpeg \-f libcdio \-i /dev/sr0 cd.wav
 .Ve
+.PP
+\fIOptions\fR
+.IX Subsection "Options"
+.IP "\fBspeed\fR" 4
+.IX Item "speed"
+Set drive reading speed. Default value is 0.
+.Sp
+The speed is specified CD-ROM speed units. The speed is set through
+the libcdio \f(CW\*(C`cdio_cddap_speed_set\*(C'\fR function. On many CD-ROM
+drives, specifying a value too large will result in using the fastest
+speed.
+.IP "\fBparanoia_mode\fR" 4
+.IX Item "paranoia_mode"
+Set paranoia recovery mode flags. It accepts one of the following values:
+.RS 4
+.IP "\fBdisable\fR" 4
+.IX Item "disable"
+.PD 0
+.IP "\fBverify\fR" 4
+.IX Item "verify"
+.IP "\fBoverlap\fR" 4
+.IX Item "overlap"
+.IP "\fBneverskip\fR" 4
+.IX Item "neverskip"
+.IP "\fBfull\fR" 4
+.IX Item "full"
+.RE
+.RS 4
+.PD
+.Sp
+Default value is \fBdisable\fR.
+.Sp
+For more information about the available recovery modes, consult the
+paranoia project documentation.
+.RE
 .SS "libdc1394"
 .IX Subsection "libdc1394"
 \&\s-1IIDC1394\s0 input device, based on libdc1394 and libraw1394.
@@ -7074,6 +7293,12 @@ conversion into the real time clock.
 Some usage examples of the video4linux2 device with \fBffmpeg\fR
 and \fBffplay\fR:
 .IP "\(bu" 4
+List supported formats for a video4linux2 device:
+.Sp
+.Vb 1
+\&        ffplay \-f video4linux2 \-list_formats all /dev/video0
+.Ve
+.IP "\(bu" 4
 Grab and show the input of a video4linux2 device:
 .Sp
 .Vb 1
@@ -7177,8 +7402,12 @@ other filename will be interpreted as device number 0.
 .IX Subsection "x11grab"
 X11 video input device.
 .PP
-Depends on X11, Xext, and Xfixes. Requires the configure option
-\&\f(CW\*(C`\-\-enable\-x11grab\*(C'\fR.
+To enable this input device during configuration you need libxcb
+installed on your system. It will be automatically detected during
+configuration.
+.PP
+Alternatively, the configure option \fB\-\-enable\-x11grab\fR exists
+for legacy Xlib users.
 .PP
 This device allows one to capture a region of an X11 display.
 .PP
@@ -7197,10 +7426,12 @@ omitted, and defaults to \*(L"localhost\*(R". The environment variable
 area with respect to the top-left border of the X11 screen. They
 default to 0.
 .PP
-Check the X11 documentation (e.g. man X) for more detailed information.
+Check the X11 documentation (e.g. \fBman X\fR) for more detailed
+information.
 .PP
-Use the \fBdpyinfo\fR program for getting basic information about the
-properties of your X11 display (e.g. grep for \*(L"name\*(R" or \*(L"dimensions\*(R").
+Use the \fBxdpyinfo\fR program for getting basic information about
+the properties of your X11 display (e.g. grep for \*(L"name\*(R" or
+\&\*(L"dimensions\*(R").
 .PP
 For example to grab from \fI:0.0\fR using \fBffmpeg\fR:
 .PP
@@ -7252,6 +7483,10 @@ Show grabbed region on screen.
 If \fIshow_region\fR is specified with \f(CW1\fR, then the grabbing
 region will be indicated on screen. With this option, it is easy to
 know what is being grabbed if only a portion of the screen is grabbed.
+.IP "\fBregion_border\fR" 4
+.IX Item "region_border"
+Set the region border thickness if \fB\-show_region 1\fR is used.
+Range is 1 to 128 and default is 3 (XCB-based x11grab only).
 .Sp
 For example:
 .Sp
@@ -7270,53 +7505,20 @@ Set the video frame size. Default value is \f(CW\*(C`vga\*(C'\fR.
 .IP "\fBuse_shm\fR" 4
 .IX Item "use_shm"
 Use the MIT-SHM extension for shared memory. Default value is \f(CW1\fR.
-It may be necessary to disable it for remote displays.
-.SS "decklink"
-.IX Subsection "decklink"
-The decklink input device provides capture capabilities for Blackmagic
-DeckLink devices.
+It may be necessary to disable it for remote displays (legacy x11grab
+only).
 .PP
-To enable this input device, you need the Blackmagic DeckLink \s-1SDK\s0 and you
-need to configure with the appropriate \f(CW\*(C`\-\-extra\-cflags\*(C'\fR
-and \f(CW\*(C`\-\-extra\-ldflags\*(C'\fR.
-On Windows, you need to run the \s-1IDL\s0 files through \fBwidl\fR.
+\fI\fIgrab_x\fI \fIgrab_y\fI AVOption\fR
+.IX Subsection "grab_x grab_y AVOption"
 .PP
-DeckLink is very picky about the formats it supports. Pixel format is always
-uyvy422, framerate and video size must be determined for your device with
-\&\fB\-list_formats 1\fR. Audio sample rate is always 48 kHz and the number
-of channels currently is limited to 2 (stereo).
+The syntax is:
 .PP
-\fIOptions\fR
-.IX Subsection "Options"
-.IP "\fBlist_devices\fR" 4
-.IX Item "list_devices"
-If set to \fBtrue\fR, print a list of devices and exit.
-Defaults to \fBfalse\fR.
-.IP "\fBlist_formats\fR" 4
-.IX Item "list_formats"
-If set to \fBtrue\fR, print a list of supported formats and exit.
-Defaults to \fBfalse\fR.
-.PP
-\fIExamples\fR
-.IX Subsection "Examples"
-.IP "\(bu" 4
-List input devices:
-.Sp
 .Vb 1
-\&        ffmpeg \-f decklink \-list_devices 1 \-i dummy
+\&        \-grab_x <x_offset> \-grab_y <y_offset>
 .Ve
-.IP "\(bu" 4
-List supported formats:
-.Sp
-.Vb 1
-\&        ffmpeg \-f decklink \-list_formats 1 \-i \*(AqIntensity Pro\*(Aq
-.Ve
-.IP "\(bu" 4
-Capture video clip at 1080i50 (format 11):
-.Sp
-.Vb 1
-\&        ffmpeg \-f decklink \-i \*(AqIntensity Pro@11\*(Aq \-acodec copy \-vcodec copy output.avi
-.Ve
+.PP
+Set the grabbing region coordinates. They are expressed as offset from the top left
+corner of the X11 window. The default value is 0.
 .SH "RESAMPLER OPTIONS"
 .IX Header "RESAMPLER OPTIONS"
 The audio resampler supports the following named options.
@@ -7806,10 +8008,11 @@ A filter with no input pads is called a \*(L"source\*(R", and a filter with no
 output pads is called a \*(L"sink\*(R".
 .SS "Filtergraph syntax"
 .IX Subsection "Filtergraph syntax"
-A filtergraph has a textual representation, which is
-recognized by the \fB\-filter\fR/\fB\-vf\fR and \fB\-filter_complex\fR
-options in \fBffmpeg\fR and \fB\-vf\fR in \fBffplay\fR, and by the
-\&\f(CW\*(C`avfilter_graph_parse()\*(C'\fR/\f(CW\*(C`avfilter_graph_parse2()\*(C'\fR functions defined in
+A filtergraph has a textual representation, which is recognized by the
+\&\fB\-filter\fR/\fB\-vf\fR/\fB\-af\fR and
+\&\fB\-filter_complex\fR options in \fBffmpeg\fR and
+\&\fB\-vf\fR/\fB\-af\fR in \fBffplay\fR, and by the
+\&\f(CW\*(C`avfilter_graph_parse_ptr()\*(C'\fR function defined in
 \&\fIlibavfilter/avfilter.h\fR.
 .PP
 A filterchain consists of a sequence of connected filters, each one
@@ -7848,13 +8051,13 @@ follow the same constraints order of the previous point. The following
 .PP
 If the option value itself is a list of items (e.g. the \f(CW\*(C`format\*(C'\fR filter
 takes a list of pixel formats), the items in the list are usually separated by
-\&'|'.
+\&\fB|\fR.
 .PP
-The list of arguments can be quoted using the character \*(L"'\*(R" as initial
-and ending mark, and the character '\e' for escaping the characters
+The list of arguments can be quoted using the character \fB'\fR as initial
+and ending mark, and the character \fB\e\fR for escaping the characters
 within the quoted text; otherwise the argument string is considered
 terminated when the next special character (belonging to the set
-\&\*(L"[]=;,\*(R") is encountered.
+\&\fB[]=;,\fR) is encountered.
 .PP
 The name and arguments of the filter are optionally preceded and
 followed by a list of link labels.
@@ -7881,6 +8084,10 @@ instance two input pads. The first output pad of split is labelled
 \&\*(L"L1\*(R", the first input pad of overlay is labelled \*(L"L2\*(R", and the second
 output pad of split is linked to the second input pad of overlay,
 which are both unlabelled.
+.PP
+In a filter description, if the input label of the first filter is not
+specified, \*(L"in\*(R" is assumed; if the output label of the last filter is not
+specified, \*(L"out\*(R" is assumed.
 .PP
 In a complete filterchain all the unlabelled filter input and output
 pads must be connected. A filtergraph is considered valid if all the
@@ -9057,6 +9264,22 @@ than the signal (making it, in some ways, similar to squelch):
 .Vb 1
 \&        compand=.1|.1:.1|.1:\-45.1/\-45.1|\-45/\-900|0/\-900:.01:45:\-90:.1
 .Ve
+.SS "dcshift"
+.IX Subsection "dcshift"
+Apply a \s-1DC\s0 shift to the audio.
+.PP
+This can be useful to remove a \s-1DC\s0 offset (caused perhaps by a hardware problem
+in the recording chain) from the audio. The effect of a \s-1DC\s0 offset is reduced
+headroom and hence volume. The \fBastats\fR filter can be used to determine if
+a signal has a \s-1DC\s0 offset.
+.IP "\fBshift\fR" 4
+.IX Item "shift"
+Set the \s-1DC\s0 shift, allowed range is [\-1, 1]. It indicates the amount to shift
+the audio.
+.IP "\fBlimitergain\fR" 4
+.IX Item "limitergain"
+Optional. It should have a value much less than 1 (e.g. 0.05 or 0.02) and is
+used to prevent clipping.
 .SS "earwax"
 .IX Subsection "earwax"
 Make audio easier to listen to on headphones.
@@ -11241,7 +11464,7 @@ Set number overlapping pixels for each block. Since the filter can be slow, you
 may want to reduce this value, at the cost of a less effective filter and the
 risk of various artefacts.
 .Sp
-If the overlapping value doesn't allow to process the whole input width or
+If the overlapping value doesn't permit processing the whole input width or
 height, a warning will be displayed and according borders won't be denoised.
 .Sp
 Default value is \fIblocksize\fR\-1, which is the best possible setting.
@@ -11968,7 +12191,7 @@ If \fBexpansion\fR is set to \f(CW\*(C`none\*(C'\fR, the text is printed verbati
 If \fBexpansion\fR is set to \f(CW\*(C`normal\*(C'\fR (which is the default),
 the following expansion mechanism is used.
 .PP
-The backslash character '\e', followed by any character, always expands to
+The backslash character \fB\e\fR, followed by any character, always expands to
 the second character.
 .PP
 Sequence of the form \f(CW\*(C`%{...}\*(C'\fR are expanded. The text between the
@@ -11998,8 +12221,9 @@ value.
 Evaluate the expression's value and output as formatted integer.
 .Sp
 The first argument is the expression to be evaluated, just as for the \fIexpr\fR function.
-The second argument specifies the output format. Allowed values are 'x', 'X', 'd' and
-\&'u'. They are treated exactly as in the printf function.
+The second argument specifies the output format. Allowed values are \fBx\fR,
+\&\fBX\fR, \fBd\fR and \fBu\fR. They are treated exactly as in the
+\&\f(CW\*(C`printf\*(C'\fR function.
 The third parameter is optional and sets the number of positions taken by the output.
 It can be used to add padding with zeros from the left.
 .IP "\fBgmtime\fR" 4
@@ -12170,6 +12394,115 @@ Painting effect without thresholding:
 .Vb 1
 \&        edgedetect=mode=colormix:high=0
 .Ve
+.SS "eq"
+.IX Subsection "eq"
+Set brightness, contrast, saturation and approximate gamma adjustment.
+.PP
+The filter accepts the following options:
+.IP "\fBcontrast\fR" 4
+.IX Item "contrast"
+Set the contrast expression. The value must be a float value in range
+\&\f(CW\*(C`\-2.0\*(C'\fR to \f(CW2.0\fR. The default value is \*(L"0\*(R".
+.IP "\fBbrightness\fR" 4
+.IX Item "brightness"
+Set the brightness expression. The value must be a float value in
+range \f(CW\*(C`\-1.0\*(C'\fR to \f(CW1.0\fR. The default value is \*(L"0\*(R".
+.IP "\fBsaturation\fR" 4
+.IX Item "saturation"
+Set the saturation expression. The value must be a float in
+range \f(CW0.0\fR to \f(CW3.0\fR. The default value is \*(L"1\*(R".
+.IP "\fBgamma\fR" 4
+.IX Item "gamma"
+Set the gamma expression. The value must be a float in range
+\&\f(CW0.1\fR to \f(CW10.0\fR.  The default value is \*(L"1\*(R".
+.IP "\fBgamma_r\fR" 4
+.IX Item "gamma_r"
+Set the gamma expression for red. The value must be a float in
+range \f(CW0.1\fR to \f(CW10.0\fR. The default value is \*(L"1\*(R".
+.IP "\fBgamma_g\fR" 4
+.IX Item "gamma_g"
+Set the gamma expression for green. The value must be a float in range
+\&\f(CW0.1\fR to \f(CW10.0\fR. The default value is \*(L"1\*(R".
+.IP "\fBgamma_b\fR" 4
+.IX Item "gamma_b"
+Set the gamma expression for blue. The value must be a float in range
+\&\f(CW0.1\fR to \f(CW10.0\fR. The default value is \*(L"1\*(R".
+.IP "\fBgamma_weight\fR" 4
+.IX Item "gamma_weight"
+Set the gamma weight expression. It can be used to reduce the effect
+of a high gamma value on bright image areas, e.g. keep them from
+getting overamplified and just plain white. The value must be a float
+in range \f(CW0.0\fR to \f(CW1.0\fR. A value of \f(CW0.0\fR turns the
+gamma correction all the way down while \f(CW1.0\fR leaves it at its
+full strength. Default is \*(L"1\*(R".
+.IP "\fBeval\fR" 4
+.IX Item "eval"
+Set when the expressions for brightness, contrast, saturation and
+gamma expressions are evaluated.
+.Sp
+It accepts the following values:
+.RS 4
+.IP "\fBinit\fR" 4
+.IX Item "init"
+only evaluate expressions once during the filter initialization or
+when a command is processed
+.IP "\fBframe\fR" 4
+.IX Item "frame"
+evaluate expressions for each incoming frame
+.RE
+.RS 4
+.Sp
+Default value is \fBinit\fR.
+.RE
+.PP
+The expressions accept the following parameters:
+.IP "\fBn\fR" 4
+.IX Item "n"
+frame count of the input frame starting from 0
+.IP "\fBpos\fR" 4
+.IX Item "pos"
+byte position of the corresponding packet in the input file, \s-1NAN\s0 if
+unspecified
+.IP "\fBr\fR" 4
+.IX Item "r"
+frame rate of the input video, \s-1NAN\s0 if the input frame rate is unknown
+.IP "\fBt\fR" 4
+.IX Item "t"
+timestamp expressed in seconds, \s-1NAN\s0 if the input timestamp is unknown
+.PP
+\fICommands\fR
+.IX Subsection "Commands"
+.PP
+The filter supports the following commands:
+.IP "\fBcontrast\fR" 4
+.IX Item "contrast"
+Set the contrast expression.
+.IP "\fBbrightness\fR" 4
+.IX Item "brightness"
+Set the brightness expression.
+.IP "\fBsaturation\fR" 4
+.IX Item "saturation"
+Set the saturation expression.
+.IP "\fBgamma\fR" 4
+.IX Item "gamma"
+Set the gamma expression.
+.IP "\fBgamma_r\fR" 4
+.IX Item "gamma_r"
+Set the gamma_r expression.
+.IP "\fBgamma_g\fR" 4
+.IX Item "gamma_g"
+Set gamma_g expression.
+.IP "\fBgamma_b\fR" 4
+.IX Item "gamma_b"
+Set gamma_b expression.
+.IP "\fBgamma_weight\fR" 4
+.IX Item "gamma_weight"
+Set gamma_weight expression.
+.Sp
+The command accepts the same syntax of the corresponding option.
+.Sp
+If the specified expression is not valid, it is kept at its current
+value.
 .SS "extractplanes"
 .IX Subsection "extractplanes"
 Extract color channel components from input video stream into
@@ -12274,7 +12607,8 @@ The number of seconds for which the fade effect has to last. At the end of the
 fade-in effect the output video will have the same intensity as the input video,
 at the end of the fade-out transition the output video will be filled with the
 selected \fBcolor\fR.
-If both duration and nb_frames are specified, duration is used. Default is 0.
+If both duration and nb_frames are specified, duration is used. Default is 0
+(nb_frames is used by default).
 .IP "\fBcolor, c\fR" 4
 .IX Item "color, c"
 Specify the color of the fade. Default is \*(L"black\*(R".
@@ -12323,6 +12657,70 @@ Make the first 5.5 seconds black, then fade in for 0.5 seconds:
 .Sp
 .Vb 1
 \&        fade=t=in:st=5.5:d=0.5
+.Ve
+.SS "fftfilt"
+.IX Subsection "fftfilt"
+Apply arbitrary expressions to samples in frequency domain
+.IP "\fBdc_Y\fR" 4
+.IX Item "dc_Y"
+Adjust the dc value (gain) of the luma plane of the image. The filter
+accepts an integer value in range \f(CW0\fR to \f(CW1000\fR. The default
+value is set to \f(CW0\fR.
+.IP "\fBdc_U\fR" 4
+.IX Item "dc_U"
+Adjust the dc value (gain) of the 1st chroma plane of the image. The
+filter accepts an integer value in range \f(CW0\fR to \f(CW1000\fR. The
+default value is set to \f(CW0\fR.
+.IP "\fBdc_V\fR" 4
+.IX Item "dc_V"
+Adjust the dc value (gain) of the 2nd chroma plane of the image. The
+filter accepts an integer value in range \f(CW0\fR to \f(CW1000\fR. The
+default value is set to \f(CW0\fR.
+.IP "\fBweight_Y\fR" 4
+.IX Item "weight_Y"
+Set the frequency domain weight expression for the luma plane.
+.IP "\fBweight_U\fR" 4
+.IX Item "weight_U"
+Set the frequency domain weight expression for the 1st chroma plane.
+.IP "\fBweight_V\fR" 4
+.IX Item "weight_V"
+Set the frequency domain weight expression for the 2nd chroma plane.
+.Sp
+The filter accepts the following variables:
+.IP "\fBX\fR" 4
+.IX Item "X"
+.PD 0
+.IP "\fBY\fR" 4
+.IX Item "Y"
+.PD
+The coordinates of the current sample.
+.IP "\fBW\fR" 4
+.IX Item "W"
+.PD 0
+.IP "\fBH\fR" 4
+.IX Item "H"
+.PD
+The width and height of the image.
+.PP
+\fIExamples\fR
+.IX Subsection "Examples"
+.IP "\(bu" 4
+High-pass:
+.Sp
+.Vb 1
+\&        fftfilt=dc_Y=128:weight_Y=\*(Aqsquish(1\-(Y+X)/100)\*(Aq
+.Ve
+.IP "\(bu" 4
+Low-pass:
+.Sp
+.Vb 1
+\&        fftfilt=dc_Y=0:weight_Y=\*(Aqsquish((Y+X)/100\-1)\*(Aq
+.Ve
+.IP "\(bu" 4
+Sharpen:
+.Sp
+.Vb 1
+\&        fftfilt=dc_Y=0:weight_Y=\*(Aq1+squish(1\-(Y+X)/100)\*(Aq
 .Ve
 .SS "field"
 .IX Subsection "field"
@@ -14081,51 +14479,6 @@ encoder.
 .Sp
 Higher values should result in a smoother motion vector field but less
 optimal individual vectors. Default value is 1.
-.SS "mp"
-.IX Subsection "mp"
-Apply an MPlayer filter to the input video.
-.PP
-This filter provides a wrapper around some of the filters of
-MPlayer/MEncoder.
-.PP
-This wrapper is considered experimental. Some of the wrapped filters
-may not work properly and we may drop support for them, as they will
-be implemented natively into FFmpeg. Thus you should avoid
-depending on them when writing portable scripts.
-.PP
-The filter accepts the parameters:
-\&\fIfilter_name\fR[:=]\fIfilter_params\fR
-.PP
-\&\fIfilter_name\fR is the name of a supported MPlayer filter,
-\&\fIfilter_params\fR is a string containing the parameters accepted by
-the named filter.
-.PP
-The list of the currently supported filters follows:
-.IP "\fIeq2\fR" 4
-.IX Item "eq2"
-.PD 0
-.IP "\fIeq\fR" 4
-.IX Item "eq"
-.IP "\fIilpack\fR" 4
-.IX Item "ilpack"
-.IP "\fIsoftpulldown\fR" 4
-.IX Item "softpulldown"
-.PD
-.PP
-The parameter syntax and behavior for the listed filters are the same
-of the corresponding MPlayer filters. For detailed instructions check
-the \*(L"\s-1VIDEO\s0 \s-1FILTERS\s0\*(R" section in the MPlayer manual.
-.PP
-\fIExamples\fR
-.IX Subsection "Examples"
-.IP "\(bu" 4
-Adjust gamma, brightness, contrast:
-.Sp
-.Vb 1
-\&        mp=eq2=1.0:2:0.5
-.Ve
-.PP
-See also \fImplayer\fR\|(1), <\fBhttp://www.mplayerhq.hu/\fR>.
 .SS "mpdecimate"
 .IX Subsection "mpdecimate"
 Drop frames that do not differ greatly from the previous frame in
@@ -14805,6 +15158,125 @@ corner of the output padded area:
 .Vb 1
 \&        pad="2*iw:2*ih:ow\-iw:oh\-ih"
 .Ve
+.SS "palettegen"
+.IX Subsection "palettegen"
+Generate one palette for a whole video stream.
+.PP
+It accepts the following options:
+.IP "\fBmax_colors\fR" 4
+.IX Item "max_colors"
+Set the maximum number of colors to quantize in the palette.
+Note: the palette will still contain 256 colors; the unused palette entries
+will be black.
+.IP "\fBreserve_transparent\fR" 4
+.IX Item "reserve_transparent"
+Create a palette of 255 colors maximum and reserve the last one for
+transparency. Reserving the transparency color is useful for \s-1GIF\s0 optimization.
+If not set, the maximum of colors in the palette will be 256. You probably want
+to disable this option for a standalone image.
+Set by default.
+.IP "\fBstats_mode\fR" 4
+.IX Item "stats_mode"
+Set statistics mode.
+.Sp
+It accepts the following values:
+.RS 4
+.IP "\fBfull\fR" 4
+.IX Item "full"
+Compute full frame histograms.
+.IP "\fBdiff\fR" 4
+.IX Item "diff"
+Compute histograms only for the part that differs from previous frame. This
+might be relevant to give more importance to the moving part of your input if
+the background is static.
+.RE
+.RS 4
+.Sp
+Default value is \fIfull\fR.
+.RE
+.PP
+The filter also exports the frame metadata \f(CW\*(C`lavfi.color_quant_ratio\*(C'\fR
+(\f(CW\*(C`nb_color_in / nb_color_out\*(C'\fR) which you can use to evaluate the degree of
+color quantization of the palette. This information is also visible at
+\&\fIinfo\fR logging level.
+.PP
+\fIExamples\fR
+.IX Subsection "Examples"
+.IP "\(bu" 4
+Generate a representative palette of a given video using \fBffmpeg\fR:
+.Sp
+.Vb 1
+\&        ffmpeg \-i input.mkv \-vf palettegen palette.png
+.Ve
+.SS "paletteuse"
+.IX Subsection "paletteuse"
+Use a palette to downsample an input video stream.
+.PP
+The filter takes two inputs: one video stream and a palette. The palette must
+be a 256 pixels image.
+.PP
+It accepts the following options:
+.IP "\fBdither\fR" 4
+.IX Item "dither"
+Select dithering mode. Available algorithms are:
+.RS 4
+.IP "\fBbayer\fR" 4
+.IX Item "bayer"
+Ordered 8x8 bayer dithering (deterministic)
+.IP "\fBheckbert\fR" 4
+.IX Item "heckbert"
+Dithering as defined by Paul Heckbert in 1982 (simple error diffusion).
+Note: this dithering is sometimes considered \*(L"wrong\*(R" and is included as a
+reference.
+.IP "\fBfloyd_steinberg\fR" 4
+.IX Item "floyd_steinberg"
+Floyd and Steingberg dithering (error diffusion)
+.IP "\fBsierra2\fR" 4
+.IX Item "sierra2"
+Frankie Sierra dithering v2 (error diffusion)
+.IP "\fBsierra2_4a\fR" 4
+.IX Item "sierra2_4a"
+Frankie Sierra dithering v2 \*(L"Lite\*(R" (error diffusion)
+.RE
+.RS 4
+.Sp
+Default is \fIsierra2_4a\fR.
+.RE
+.IP "\fBbayer_scale\fR" 4
+.IX Item "bayer_scale"
+When \fIbayer\fR dithering is selected, this option defines the scale of the
+pattern (how much the crosshatch pattern is visible). A low value means more
+visible pattern for less banding, and higher value means less visible pattern
+at the cost of more banding.
+.Sp
+The option must be an integer value in the range [0,5]. Default is \fI2\fR.
+.IP "\fBdiff_mode\fR" 4
+.IX Item "diff_mode"
+If set, define the zone to process
+.RS 4
+.IP "\fBrectangle\fR" 4
+.IX Item "rectangle"
+Only the changing rectangle will be reprocessed. This is similar to \s-1GIF\s0
+cropping/offsetting compression mechanism. This option can be useful for speed
+if only a part of the image is changing, and has use cases such as limiting the
+scope of the error diffusal \fBdither\fR to the rectangle that bounds the
+moving scene (it leads to more deterministic output if the scene doesn't change
+much, and as a result less moving noise and better \s-1GIF\s0 compression).
+.RE
+.RS 4
+.Sp
+Default is \fInone\fR.
+.RE
+.PP
+\fIExamples\fR
+.IX Subsection "Examples"
+.IP "\(bu" 4
+Use a palette (generated for example with \fBpalettegen\fR) to encode a \s-1GIF\s0
+using \fBffmpeg\fR:
+.Sp
+.Vb 1
+\&        ffmpeg \-i input.mkv \-i palette.png \-lavfi paletteuse output.gif
+.Ve
 .SS "perspective"
 .IX Subsection "perspective"
 Correct perspective of video not recorded perpendicular to the screen.
@@ -15313,6 +15785,32 @@ telecine \s-1NTSC\s0 input:
 .Vb 1
 \&        ffmpeg \-i input \-vf pullup \-r 24000/1001 ...
 .Ve
+.SS "qp"
+.IX Subsection "qp"
+Change video quantization parameters (\s-1QP\s0).
+.PP
+The filter accepts the following option:
+.IP "\fBqp\fR" 4
+.IX Item "qp"
+Set expression for quantization parameter.
+.PP
+The expression is evaluated through the eval \s-1API\s0 and can contain, among others,
+the following constants:
+.IP "\fIknown\fR" 4
+.IX Item "known"
+1 if index is not 129, 0 otherwise.
+.IP "\fIqp\fR" 4
+.IX Item "qp"
+Sequentional index starting from \-129 to 128.
+.PP
+\fIExamples\fR
+.IX Subsection "Examples"
+.IP "\(bu" 4
+Some equation like:
+.Sp
+.Vb 1
+\&        qp=2+2*sin(PI*qp)
+.Ve
 .SS "removelogo"
 .IX Subsection "removelogo"
 Suppress a \s-1TV\s0 station logo, using an image file to determine which
@@ -15340,6 +15838,10 @@ reduced. Marking too many pixels as part of the logo does not hurt as
 much, but it will increase the amount of blurring needed to cover over
 the image and will destroy more information than necessary, and extra
 pixels will slow things down on a large logo.
+.SS "repeatfields"
+.IX Subsection "repeatfields"
+This filter uses the repeat_field flag from the Video \s-1ES\s0 headers and hard repeats
+fields based on its value.
 .SS "rotate"
 .IX Subsection "rotate"
 Rotate video by an arbitrary angle expressed in radians.
@@ -15581,8 +16083,8 @@ complete list of values. If not explicitly specified the filter applies
 the default flags.
 .IP "\fBsize, s\fR" 4
 .IX Item "size, s"
-Set the video size. For the syntax of this option, check the \*(L"Video size\*(R"
-section in the ffmpeg-utils manual.
+Set the video size. For the syntax of this option, check the
+\&\fB\*(L"Video size\*(R" section in the ffmpeg-utils manual\fR.
 .IP "\fBin_color_matrix\fR" 4
 .IX Item "in_color_matrix"
 .PD 0
@@ -15991,8 +16493,8 @@ The sample aspect ratio of the input frame, expressed in the form
 \&\fInum\fR/\fIden\fR.
 .IP "\fBs\fR" 4
 .IX Item "s"
-The size of the input frame. For the syntax of this option, check the \*(L"Video size\*(R"
-section in the ffmpeg-utils manual.
+The size of the input frame. For the syntax of this option, check the
+\&\fB\*(L"Video size\*(R" section in the ffmpeg-utils manual\fR.
 .IP "\fBi\fR" 4
 .IX Item "i"
 The type of interlaced mode (\*(L"P\*(R" for \*(L"progressive\*(R", \*(L"T\*(R" for top field first, \*(L"B\*(R"
@@ -16014,6 +16516,16 @@ The Adler\-32 checksum (printed in hexadecimal) of all the planes of the input f
 .IX Item "plane_checksum"
 The Adler\-32 checksum (printed in hexadecimal) of each plane of the input frame,
 expressed in the form "[\fIc0\fR \fIc1\fR \fIc2\fR \fIc3\fR]".
+.SS "showpalette"
+.IX Subsection "showpalette"
+Displays the 256 colors palette of each frame. This filter is only relevant for
+\&\fIpal8\fR pixel format frames.
+.PP
+It accepts the following option:
+.IP "\fBs\fR" 4
+.IX Item "s"
+Set the size of the box used to represent one palette color entry. Default is
+\&\f(CW30\fR (for a \f(CW\*(C`30x30\*(C'\fR pixel box).
 .SS "shuffleplanes"
 .IX Subsection "shuffleplanes"
 Reorder and/or duplicate video planes.
@@ -16460,10 +16972,10 @@ Set the filename of the subtitle file to read. It must be specified.
 .IP "\fBoriginal_size\fR" 4
 .IX Item "original_size"
 Specify the size of the original video, the video for which the \s-1ASS\s0 file
-was composed. For the syntax of this option, check the \*(L"Video size\*(R" section in
-the ffmpeg-utils manual. Due to a misdesign in \s-1ASS\s0 aspect ratio arithmetic,
-this is necessary to correctly scale the fonts if the aspect ratio has been
-changed.
+was composed. For the syntax of this option, check the
+\&\fB\*(L"Video size\*(R" section in the ffmpeg-utils manual\fR.
+Due to a misdesign in \s-1ASS\s0 aspect ratio arithmetic, this is necessary to
+correctly scale the fonts if the aspect ratio has been changed.
 .IP "\fBcharenc\fR" 4
 .IX Item "charenc"
 Set subtitles input character encoding. \f(CW\*(C`subtitles\*(C'\fR filter only. Only
@@ -16471,6 +16983,10 @@ useful if not \s-1UTF\-8\s0.
 .IP "\fBstream_index, si\fR" 4
 .IX Item "stream_index, si"
 Set subtitles stream index. \f(CW\*(C`subtitles\*(C'\fR filter only.
+.IP "\fBforce_style\fR" 4
+.IX Item "force_style"
+Override default style or script info parameters of the subtitles. It accepts a
+string containing \s-1ASS\s0 style format \f(CW\*(C`KEY=VALUE\*(C'\fR couples separated by \*(L",\*(R".
 .PP
 If the first key is not specified, it is assumed that the first value
 specifies the \fBfilename\fR.
@@ -16498,6 +17014,13 @@ To render the second subtitles stream from that file, use:
 .PP
 .Vb 1
 \&        subtitles=video.mkv:si=1
+.Ve
+.PP
+To make the subtitles stream from \fIsub.srt\fR appear in transparent green
+\&\f(CW\*(C`DejaVu Serif\*(C'\fR, use:
+.PP
+.Vb 1
+\&        subtitles=sub.srt:force_style=\*(AqFontName=DejaVu Serif,PrimaryColour=&HAA00FF00\*(Aq
 .Ve
 .SS "super2xsai"
 .IX Subsection "super2xsai"
@@ -16586,7 +17109,8 @@ The filter accepts the following options:
 .IP "\fBlayout\fR" 4
 .IX Item "layout"
 Set the grid size (i.e. the number of lines and columns). For the syntax of
-this option, check the \*(L"Video size\*(R" section in the ffmpeg-utils manual.
+this option, check the
+\&\fB\*(L"Video size\*(R" section in the ffmpeg-utils manual\fR.
 .IP "\fBnb_frames\fR" 4
 .IX Item "nb_frames"
 Set the maximum number of frames to render in the given area. It must be less
@@ -17652,8 +18176,8 @@ It accepts the following parameters:
 .IP "\fBvideo_size\fR" 4
 .IX Item "video_size"
 Specify the size (width and height) of the buffered video frames. For the
-syntax of this option, check the \*(L"Video size\*(R" section in the ffmpeg-utils
-manual.
+syntax of this option, check the
+\&\fB\*(L"Video size\*(R" section in the ffmpeg-utils manual\fR.
 .IP "\fBwidth\fR" 4
 .IX Item "width"
 The input video width.
@@ -17752,8 +18276,8 @@ Set the cellular automaton rule, it is a number ranging from 0 to 255.
 Default value is 110.
 .IP "\fBsize, s\fR" 4
 .IX Item "size, s"
-Set the size of the output video. For the syntax of this option, check
-the \*(L"Video size\*(R" section in the ffmpeg-utils manual.
+Set the size of the output video. For the syntax of this option, check the
+\&\fB\*(L"Video size\*(R" section in the ffmpeg-utils manual\fR.
 .Sp
 If \fBfilename\fR or \fBpattern\fR is specified, the size is set
 by default to the width of the specified initial state row, and the
@@ -17964,7 +18488,7 @@ This source accepts the following parameters:
 .IP "\fBsize\fR" 4
 .IX Item "size"
 The size of the video to generate. For the syntax of this option, check the
-\&\*(L"Video size\*(R" section in the ffmpeg-utils manual.
+\&\fB\*(L"Video size\*(R" section in the ffmpeg-utils manual\fR.
 .IP "\fBframerate\fR" 4
 .IX Item "framerate"
 The framerate of the generated video. It may be a string of the form
@@ -18050,7 +18574,7 @@ a dead cell.
 .IP "\fBsize, s\fR" 4
 .IX Item "size, s"
 Set the size of the output video. For the syntax of this option, check the
-\&\*(L"Video size\*(R" section in the ffmpeg-utils manual.
+\&\fB\*(L"Video size\*(R" section in the ffmpeg-utils manual\fR.
 .Sp
 If \fBfilename\fR is specified, the size is set by default to the
 same size of the input file. If \fBsize\fR is set, it must contain
@@ -18149,8 +18673,8 @@ coded on a \f(CW\*(C`1/(N*N)\*(C'\fR scale.
 .IP "\fBsize, s\fR" 4
 .IX Item "size, s"
 Specify the size of the sourced video. For the syntax of this option, check the
-\&\*(L"Video size\*(R" section in the ffmpeg-utils manual. The default value is
-\&\*(L"320x240\*(R".
+\&\fB\*(L"Video size\*(R" section in the ffmpeg-utils manual\fR.
+The default value is \f(CW\*(C`320x240\*(C'\fR.
 .Sp
 This option is not available with the \f(CW\*(C`haldclutsrc\*(C'\fR filter.
 .IP "\fBrate, r\fR" 4
@@ -18268,8 +18792,9 @@ Default value is \fBlissajous\fR.
 .RE
 .IP "\fBsize, s\fR" 4
 .IX Item "size, s"
-Set the video size for the output. For the syntax of this option, check the \*(L"Video size\*(R"
-section in the ffmpeg-utils manual. Default value is \f(CW\*(C`400x400\*(C'\fR.
+Set the video size for the output. For the syntax of this option, check the
+\&\fB\*(L"Video size\*(R" section in the ffmpeg-utils manual\fR.
+Default value is \f(CW\*(C`400x400\*(C'\fR.
 .IP "\fBrate, r\fR" 4
 .IX Item "rate, r"
 Set the output frame rate. Default value is \f(CW25\fR.
@@ -18406,8 +18931,9 @@ activated. Default is \f(CW0\fR.
 .IP "\fBsize\fR" 4
 .IX Item "size"
 Set the video size. This option is for video only. For the syntax of this
-option, check the \*(L"Video size\*(R" section in the ffmpeg-utils manual. Default
-and minimum resolution is \f(CW\*(C`640x480\*(C'\fR.
+option, check the
+\&\fB\*(L"Video size\*(R" section in the ffmpeg-utils manual\fR.
+Default and minimum resolution is \f(CW\*(C`640x480\*(C'\fR.
 .IP "\fBmeter\fR" 4
 .IX Item "meter"
 Set the \s-1EBU\s0 scale meter. Default is \f(CW9\fR. Common values are \f(CW9\fR and
@@ -19130,6 +19656,10 @@ Default value is \f(CW1.0\fR.
 Specify gamma. Lower gamma makes the spectrum more contrast, higher gamma
 makes the spectrum having more range. Acceptable value is [1.0, 7.0].
 Default value is \f(CW3.0\fR.
+.IP "\fBgamma2\fR" 4
+.IX Item "gamma2"
+Specify gamma of bargraph. Acceptable value is [1.0, 7.0].
+Default value is \f(CW1.0\fR.
 .IP "\fBfontfile\fR" 4
 .IX Item "fontfile"
 Specify font file for use with freetype. If not specified, use embedded font.
@@ -19226,6 +19756,12 @@ Custom fontcolor, C\-note is colored green, others are colored blue
 .Vb 1
 \&        fontcolor=\*(Aqif(mod(floor(midi(f)+0.5),12), 0x0000FF, g(1))\*(Aq
 .Ve
+.IP "\(bu" 4
+Custom gamma, now spectrum is linear to the amplitude.
+.Sp
+.Vb 1
+\&        gamma=2:gamma2=2
+.Ve
 .SS "showspectrum"
 .IX Subsection "showspectrum"
 Convert input audio to a video output, representing the audio frequency
@@ -19234,9 +19770,9 @@ spectrum.
 The filter accepts the following options:
 .IP "\fBsize, s\fR" 4
 .IX Item "size, s"
-Specify the video size for the output. For the syntax of this option, check
-the \*(L"Video size\*(R" section in the ffmpeg-utils manual. Default value is
-\&\f(CW\*(C`640x512\*(C'\fR.
+Specify the video size for the output. For the syntax of this option, check the
+\&\fB\*(L"Video size\*(R" section in the ffmpeg-utils manual\fR.
+Default value is \f(CW\*(C`640x512\*(C'\fR.
 .IP "\fBslide\fR" 4
 .IX Item "slide"
 Specify how the spectrum should slide along the window.
@@ -19369,9 +19905,9 @@ Convert input audio to a video output, representing the samples waves.
 The filter accepts the following options:
 .IP "\fBsize, s\fR" 4
 .IX Item "size, s"
-Specify the video size for the output. For the syntax of this option, check
-the \*(L"Video size\*(R" section in the ffmpeg-utils manual. Default value
-is \*(L"600x240\*(R".
+Specify the video size for the output. For the syntax of this option, check the
+\&\fB\*(L"Video size\*(R" section in the ffmpeg-utils manual\fR.
+Default value is \f(CW\*(C`600x240\*(C'\fR.
 .IP "\fBmode\fR" 4
 .IX Item "mode"
 Set display mode.
@@ -19424,6 +19960,29 @@ frame rate of 30 frames per second:
 .Sp
 .Vb 1
 \&        aevalsrc=sin(1*2*PI*t)*sin(880*2*PI*t):cos(2*PI*200*t),asplit[out0],showwaves=r=30[out1]
+.Ve
+.SS "showwavespic"
+.IX Subsection "showwavespic"
+Convert input audio to a single video frame, representing the samples waves.
+.PP
+The filter accepts the following options:
+.IP "\fBsize, s\fR" 4
+.IX Item "size, s"
+Specify the video size for the output. For the syntax of this option, check the
+\&\fB\*(L"Video size\*(R" section in the ffmpeg-utils manual\fR.
+Default value is \f(CW\*(C`600x240\*(C'\fR.
+.IP "\fBsplit_channels\fR" 4
+.IX Item "split_channels"
+Set if channels should be drawn separately or overlap. Default value is 0.
+.PP
+\fIExamples\fR
+.IX Subsection "Examples"
+.IP "\(bu" 4
+Extract a channel split representation of the wave form of a whole audio track
+in a 1024x800 picture using \fBffmpeg\fR:
+.Sp
+.Vb 1
+\&        ffmpeg \-i audio.flac \-lavfi showwavespic=split_channels=1:s=1024x800 waveform.png
 .Ve
 .SS "split, asplit"
 .IX Subsection "split, asplit"

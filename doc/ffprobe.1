@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "FFPROBE 1"
-.TH FFPROBE 1 "2015-03-17" " " " "
+.TH FFPROBE 1 " " " " " "
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -223,6 +223,10 @@ Match the stream by stream id (e.g. \s-1PID\s0 in MPEG-TS container).
 Matches streams with the metadata tag \fIkey\fR having the specified value. If
 \&\fIvalue\fR is not given, matches streams that contain the given tag with any
 value.
+.IP "\fBu\fR" 4
+.IX Item "u"
+Matches streams with usable configuration, the codec must be defined and the
+essential information such as video dimension or audio sample rate must be present.
 .Sp
 Note that in \fBffmpeg\fR, matching by metadata will only work properly for
 input files.
@@ -532,8 +536,44 @@ Possible flags for this option are:
 .IP "\fB\-opencl_bench\fR" 4
 .IX Item "-opencl_bench"
 .PD
-Benchmark all available OpenCL devices and show the results. This option
-is only available when FFmpeg has been compiled with \f(CW\*(C`\-\-enable\-opencl\*(C'\fR.
+This option is used to benchmark all available OpenCL devices and print the
+results. This option is only available when FFmpeg has been compiled with
+\&\f(CW\*(C`\-\-enable\-opencl\*(C'\fR.
+.Sp
+When FFmpeg is configured with \f(CW\*(C`\-\-enable\-opencl\*(C'\fR, the options for the
+global OpenCL context are set via \fB\-opencl_options\fR. See the
+\&\*(L"OpenCL Options\*(R" section in the ffmpeg-utils manual for the complete list of
+supported options. Amongst others, these options include the ability to select
+a specific platform and device to run the OpenCL code on. By default, FFmpeg
+will run on the first device of the first platform. While the options for the
+global OpenCL context provide flexibility to the user in selecting the OpenCL
+device of their choice, most users would probably want to select the fastest
+OpenCL device for their system.
+.Sp
+This option assists the selection of the most efficient configuration by
+identifying the appropriate device for the user's system. The built-in
+benchmark is run on all the OpenCL devices and the performance is measured for
+each device. The devices in the results list are sorted based on their
+performance with the fastest device listed first. The user can subsequently
+invoke \fBffmpeg\fR using the device deemed most appropriate via
+\&\fB\-opencl_options\fR to obtain the best performance for the OpenCL
+accelerated code.
+.Sp
+Typical usage to use the fastest OpenCL device involve the following steps.
+.Sp
+Run the command:
+.Sp
+.Vb 1
+\&        ffmpeg \-opencl_bench
+.Ve
+.Sp
+Note down the platform \s-1ID\s0 (\fIpidx\fR) and device \s-1ID\s0 (\fIdidx\fR) of the first
+i.e. fastest device in the list.
+Select the platform and device using the command:
+.Sp
+.Vb 1
+\&        ffmpeg \-opencl_options platform_idx=<pidx>:device_idx=<didx> ...
+.Ve
 .IP "\fB\-opencl_options options (\fR\fIglobal\fR\fB)\fR" 4
 .IX Item "-opencl_options options (global)"
 Set OpenCL environment options. This option is only available when
@@ -970,17 +1010,17 @@ It can assume one of the following values:
 .RS 4
 .IP "\fBc\fR" 4
 .IX Item "c"
-Perform C\-like escaping. Strings containing a newline ('\en'), carriage
-return ('\er'), a tab ('\et'), a form feed ('\ef'), the escaping
-character ('\e') or the item separator character \fI\s-1SEP\s0\fR are escaped using C\-like fashioned
-escaping, so that a newline is converted to the sequence \*(L"\en\*(R", a
-carriage return to \*(L"\er\*(R", '\e' to \*(L"\e\e\*(R" and the separator \fI\s-1SEP\s0\fR is
-converted to "\e\fI\s-1SEP\s0\fR".
+Perform C\-like escaping. Strings containing a newline (\fB\en\fR), carriage
+return (\fB\er\fR), a tab (\fB\et\fR), a form feed (\fB\ef\fR), the escaping
+character (\fB\e\fR) or the item separator character \fI\s-1SEP\s0\fR are escaped
+using C\-like fashioned escaping, so that a newline is converted to the
+sequence \fB\en\fR, a carriage return to \fB\er\fR, \fB\e\fR to \fB\e\e\fR and
+the separator \fI\s-1SEP\s0\fR is converted to \fB\e\fR\fI\s-1SEP\s0\fR.
 .IP "\fBcsv\fR" 4
 .IX Item "csv"
 Perform CSV-like escaping, as described in \s-1RFC4180\s0.  Strings
-containing a newline ('\en'), a carriage return ('\er'), a double quote
-('"'), or \fI\s-1SEP\s0\fR are enclosed in double-quotes.
+containing a newline (\fB\en\fR), a carriage return (\fB\er\fR), a double quote
+(\fB"\fR), or \fI\s-1SEP\s0\fR are enclosed in double-quotes.
 .IP "\fBnone\fR" 4
 .IX Item "none"
 Perform no escaping.
@@ -1007,7 +1047,7 @@ The description of the accepted options follows.
 Separator character used to separate the chapter, the section name, IDs and
 potential tags in the printed field key.
 .Sp
-Default value is '.'.
+Default value is \fB.\fR.
 .IP "\fBhierarchical, h\fR" 4
 .IX Item "hierarchical, h"
 Specify if the section name specification should be hierarchical. If
@@ -1026,20 +1066,21 @@ The following conventions are adopted:
 .IP "\(bu" 4
 all key and values are \s-1UTF\-8\s0
 .IP "\(bu" 4
-\&'.' is the subgroup separator
+\&\fB.\fR is the subgroup separator
 .IP "\(bu" 4
-newline, '\et', '\ef', '\eb' and the following characters are escaped
+newline, \fB\et\fR, \fB\ef\fR, \fB\eb\fR and the following characters are
+escaped
 .IP "\(bu" 4
-\&'\e' is the escape character
+\&\fB\e\fR is the escape character
 .IP "\(bu" 4
-\&'#' is the comment indicator
+\&\fB#\fR is the comment indicator
 .IP "\(bu" 4
-\&'=' is the key/value separator
+\&\fB=\fR is the key/value separator
 .IP "\(bu" 4
-\&':' is not used but usually parsed as key/value separator
+\&\fB:\fR is not used but usually parsed as key/value separator
 .PP
 This writer accepts options as a list of \fIkey\fR=\fIvalue\fR pairs,
-separated by \*(L":\*(R".
+separated by \fB:\fR.
 .PP
 The description of the accepted options follows.
 .IP "\fBhierarchical, h\fR" 4

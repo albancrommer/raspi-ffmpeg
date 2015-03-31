@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "FFMPEG-DEVICES 1"
-.TH FFMPEG-DEVICES 1 "2015-02-25" " " " "
+.TH FFMPEG-DEVICES 1 " " " " " "
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -152,7 +152,7 @@ FFmpeg tools, or by setting the value explicitly in the device
 for programmatic use.
 .SH "INPUT DEVICES"
 .IX Header "INPUT DEVICES"
-Input devices are configured elements in FFmpeg which allow to access
+Input devices are configured elements in FFmpeg which enable accessing
 the data coming from a multimedia device attached to your system.
 .PP
 When you configure your FFmpeg build, all the supported input devices
@@ -298,6 +298,74 @@ Record video from the system default video device using the pixel format bgr0 an
 .SS "bktr"
 .IX Subsection "bktr"
 \&\s-1BSD\s0 video input device.
+.SS "decklink"
+.IX Subsection "decklink"
+The decklink input device provides capture capabilities for Blackmagic
+DeckLink devices.
+.PP
+To enable this input device, you need the Blackmagic DeckLink \s-1SDK\s0 and you
+need to configure with the appropriate \f(CW\*(C`\-\-extra\-cflags\*(C'\fR
+and \f(CW\*(C`\-\-extra\-ldflags\*(C'\fR.
+On Windows, you need to run the \s-1IDL\s0 files through \fBwidl\fR.
+.PP
+DeckLink is very picky about the formats it supports. Pixel format is
+uyvy422 or v210, framerate and video size must be determined for your device with
+\&\fB\-list_formats 1\fR. Audio sample rate is always 48 kHz and the number
+of channels can be 2, 8 or 16.
+.PP
+\fIOptions\fR
+.IX Subsection "Options"
+.IP "\fBlist_devices\fR" 4
+.IX Item "list_devices"
+If set to \fBtrue\fR, print a list of devices and exit.
+Defaults to \fBfalse\fR.
+.IP "\fBlist_formats\fR" 4
+.IX Item "list_formats"
+If set to \fBtrue\fR, print a list of supported formats and exit.
+Defaults to \fBfalse\fR.
+.IP "\fBbm_v210\fR" 4
+.IX Item "bm_v210"
+If set to \fB1\fR, video is captured in 10 bit v210 instead
+of uyvy422. Not all Blackmagic devices support this option.
+.PP
+\fIExamples\fR
+.IX Subsection "Examples"
+.IP "\(bu" 4
+List input devices:
+.Sp
+.Vb 1
+\&        ffmpeg \-f decklink \-list_devices 1 \-i dummy
+.Ve
+.IP "\(bu" 4
+List supported formats:
+.Sp
+.Vb 1
+\&        ffmpeg \-f decklink \-list_formats 1 \-i \*(AqIntensity Pro\*(Aq
+.Ve
+.IP "\(bu" 4
+Capture video clip at 1080i50 (format 11):
+.Sp
+.Vb 1
+\&        ffmpeg \-f decklink \-i \*(AqIntensity Pro@11\*(Aq \-acodec copy \-vcodec copy output.avi
+.Ve
+.IP "\(bu" 4
+Capture video clip at 1080i50 10 bit:
+.Sp
+.Vb 1
+\&        ffmpeg \-bm_v210 1 \-f decklink \-i \*(AqUltraStudio Mini Recorder@11\*(Aq \-acodec copy \-vcodec copy output.avi
+.Ve
+.IP "\(bu" 4
+Capture video clip at 720p50 with 32bit audio:
+.Sp
+.Vb 1
+\&        ffmpeg \-bm_audiodepth 32 \-f decklink \-i \*(AqUltraStudio Mini Recorder@14\*(Aq \-acodec copy \-vcodec copy output.avi
+.Ve
+.IP "\(bu" 4
+Capture video clip at 576i50 with 8 audio channels:
+.Sp
+.Vb 1
+\&        ffmpeg \-bm_channels 8 \-f decklink \-i \*(AqUltraStudio Mini Recorder@3\*(Aq \-acodec copy \-vcodec copy output.avi
+.Ve
 .SS "dshow"
 .IX Subsection "dshow"
 Windows DirectShow input device.
@@ -315,7 +383,7 @@ The input name should be in the format:
 .Ve
 .PP
 where \fI\s-1TYPE\s0\fR can be either \fIaudio\fR or \fIvideo\fR,
-and \fI\s-1NAME\s0\fR is the device's name.
+and \fI\s-1NAME\s0\fR is the device's name or alternative name..
 .PP
 \fIOptions\fR
 .IX Subsection "Options"
@@ -366,6 +434,61 @@ default buffer size (typically some multiple of 500ms).
 Setting this value too low can degrade performance.
 See also
 <\fBhttp://msdn.microsoft.com/en\-us/library/windows/desktop/dd377582(v=vs.85).aspx\fR>
+.IP "\fBvideo_pin_name\fR" 4
+.IX Item "video_pin_name"
+Select video capture pin to use by name or alternative name.
+.IP "\fBaudio_pin_name\fR" 4
+.IX Item "audio_pin_name"
+Select audio capture pin to use by name or alternative name.
+.IP "\fBcrossbar_video_input_pin_number\fR" 4
+.IX Item "crossbar_video_input_pin_number"
+Select video input pin number for crossbar device. This will be
+routed to the crossbar device's Video Decoder output pin.
+Note that changing this value can affect future invocations
+(sets a new default) until system reboot occurs.
+.IP "\fBcrossbar_audio_input_pin_number\fR" 4
+.IX Item "crossbar_audio_input_pin_number"
+Select audio input pin number for crossbar device. This will be
+routed to the crossbar device's Audio Decoder output pin.
+Note that changing this value can affect future invocations
+(sets a new default) until system reboot occurs.
+.IP "\fBshow_video_device_dialog\fR" 4
+.IX Item "show_video_device_dialog"
+If set to \fBtrue\fR, before capture starts, popup a display dialog
+to the end user, allowing them to change video filter properties
+and configurations manually.
+Note that for crossbar devices, adjusting values in this dialog
+may be needed at times to toggle between \s-1PAL\s0 (25 fps) and \s-1NTSC\s0 (29.97)
+input frame rates, sizes, interlacing, etc.  Changing these values can
+enable different scan rates/frame rates and avoiding green bars at
+the bottom, flickering scan lines, etc.
+Note that with some devices, changing these properties can also affect future
+invocations (sets new defaults) until system reboot occurs.
+.IP "\fBshow_audio_device_dialog\fR" 4
+.IX Item "show_audio_device_dialog"
+If set to \fBtrue\fR, before capture starts, popup a display dialog
+to the end user, allowing them to change audio filter properties
+and configurations manually.
+.IP "\fBshow_video_crossbar_connection_dialog\fR" 4
+.IX Item "show_video_crossbar_connection_dialog"
+If set to \fBtrue\fR, before capture starts, popup a display
+dialog to the end user, allowing them to manually
+modify crossbar pin routings, when it opens a video device.
+.IP "\fBshow_audio_crossbar_connection_dialog\fR" 4
+.IX Item "show_audio_crossbar_connection_dialog"
+If set to \fBtrue\fR, before capture starts, popup a display
+dialog to the end user, allowing them to manually
+modify crossbar pin routings, when it opens an audio device.
+.IP "\fBshow_analog_tv_tuner_dialog\fR" 4
+.IX Item "show_analog_tv_tuner_dialog"
+If set to \fBtrue\fR, before capture starts, popup a display
+dialog to the end user, allowing them to manually
+modify \s-1TV\s0 channels and frequencies.
+.IP "\fBshow_analog_tv_tuner_audio_dialog\fR" 4
+.IX Item "show_analog_tv_tuner_audio_dialog"
+If set to \fBtrue\fR, before capture starts, popup a display
+dialog to the end user, allowing them to manually
+modify \s-1TV\s0 audio (like mono vs. stereo, Language A,B or C).
 .PP
 \fIExamples\fR
 .IX Subsection "Examples"
@@ -398,6 +521,19 @@ Print the list of supported options in selected device and exit:
 .Sp
 .Vb 1
 \&        $ ffmpeg \-list_options true \-f dshow \-i video="Camera"
+.Ve
+.IP "\(bu" 4
+Specify pin names to capture by name or alternative name, specify alternative device name:
+.Sp
+.Vb 1
+\&        $ ffmpeg \-f dshow \-audio_pin_name "Audio Out" \-video_pin_name 2 \-i video=video="@device_pnp_\e\e?\epci#ven_1a0a&dev_6200&subsys_62021461&rev_01#4&e2c7dd6&0&00e1#{65e8773d\-8f56\-11d0\-a3b9\-00a0c9223196}\e{ca465100\-deb0\-4d59\-818f\-8c477184adf6}":audio="Microphone"
+.Ve
+.IP "\(bu" 4
+Configure a crossbar device, specifying crossbar pins, allow user to adjust video capture properties at startup:
+.Sp
+.Vb 2
+\&        $ ffmpeg \-f dshow \-show_video_device_dialog true \-crossbar_video_input_pin_number 0
+\&             \-crossbar_audio_input_pin_number 3 \-i video="AVerMedia BDA Analog Capture":audio="AVerMedia BDA Analog Capture"
 .Ve
 .SS "dv1394"
 .IX Subsection "dv1394"
@@ -691,20 +827,55 @@ Dump decoded frames to images and closed captions to a file (experimental):
 .Ve
 .SS "libcdio"
 .IX Subsection "libcdio"
-Audio-CD input device based on cdio.
+Audio-CD input device based on libcdio.
 .PP
 To enable this input device during configuration you need libcdio
-installed on your system. Requires the configure option
+installed on your system. It requires the configure option
 \&\f(CW\*(C`\-\-enable\-libcdio\*(C'\fR.
 .PP
 This device allows playing and grabbing from an Audio-CD.
 .PP
-For example to copy with \fBffmpeg\fR the entire Audio-CD in /dev/sr0,
+For example to copy with \fBffmpeg\fR the entire Audio-CD in \fI/dev/sr0\fR,
 you may run the command:
 .PP
 .Vb 1
 \&        ffmpeg \-f libcdio \-i /dev/sr0 cd.wav
 .Ve
+.PP
+\fIOptions\fR
+.IX Subsection "Options"
+.IP "\fBspeed\fR" 4
+.IX Item "speed"
+Set drive reading speed. Default value is 0.
+.Sp
+The speed is specified CD-ROM speed units. The speed is set through
+the libcdio \f(CW\*(C`cdio_cddap_speed_set\*(C'\fR function. On many CD-ROM
+drives, specifying a value too large will result in using the fastest
+speed.
+.IP "\fBparanoia_mode\fR" 4
+.IX Item "paranoia_mode"
+Set paranoia recovery mode flags. It accepts one of the following values:
+.RS 4
+.IP "\fBdisable\fR" 4
+.IX Item "disable"
+.PD 0
+.IP "\fBverify\fR" 4
+.IX Item "verify"
+.IP "\fBoverlap\fR" 4
+.IX Item "overlap"
+.IP "\fBneverskip\fR" 4
+.IX Item "neverskip"
+.IP "\fBfull\fR" 4
+.IX Item "full"
+.RE
+.RS 4
+.PD
+.Sp
+Default value is \fBdisable\fR.
+.Sp
+For more information about the available recovery modes, consult the
+paranoia project documentation.
+.RE
 .SS "libdc1394"
 .IX Subsection "libdc1394"
 \&\s-1IIDC1394\s0 input device, based on libdc1394 and libraw1394.
@@ -943,6 +1114,12 @@ conversion into the real time clock.
 Some usage examples of the video4linux2 device with \fBffmpeg\fR
 and \fBffplay\fR:
 .IP "\(bu" 4
+List supported formats for a video4linux2 device:
+.Sp
+.Vb 1
+\&        ffplay \-f video4linux2 \-list_formats all /dev/video0
+.Ve
+.IP "\(bu" 4
 Grab and show the input of a video4linux2 device:
 .Sp
 .Vb 1
@@ -1046,8 +1223,12 @@ other filename will be interpreted as device number 0.
 .IX Subsection "x11grab"
 X11 video input device.
 .PP
-Depends on X11, Xext, and Xfixes. Requires the configure option
-\&\f(CW\*(C`\-\-enable\-x11grab\*(C'\fR.
+To enable this input device during configuration you need libxcb
+installed on your system. It will be automatically detected during
+configuration.
+.PP
+Alternatively, the configure option \fB\-\-enable\-x11grab\fR exists
+for legacy Xlib users.
 .PP
 This device allows one to capture a region of an X11 display.
 .PP
@@ -1066,10 +1247,12 @@ omitted, and defaults to \*(L"localhost\*(R". The environment variable
 area with respect to the top-left border of the X11 screen. They
 default to 0.
 .PP
-Check the X11 documentation (e.g. man X) for more detailed information.
+Check the X11 documentation (e.g. \fBman X\fR) for more detailed
+information.
 .PP
-Use the \fBdpyinfo\fR program for getting basic information about the
-properties of your X11 display (e.g. grep for \*(L"name\*(R" or \*(L"dimensions\*(R").
+Use the \fBxdpyinfo\fR program for getting basic information about
+the properties of your X11 display (e.g. grep for \*(L"name\*(R" or
+\&\*(L"dimensions\*(R").
 .PP
 For example to grab from \fI:0.0\fR using \fBffmpeg\fR:
 .PP
@@ -1121,6 +1304,10 @@ Show grabbed region on screen.
 If \fIshow_region\fR is specified with \f(CW1\fR, then the grabbing
 region will be indicated on screen. With this option, it is easy to
 know what is being grabbed if only a portion of the screen is grabbed.
+.IP "\fBregion_border\fR" 4
+.IX Item "region_border"
+Set the region border thickness if \fB\-show_region 1\fR is used.
+Range is 1 to 128 and default is 3 (XCB-based x11grab only).
 .Sp
 For example:
 .Sp
@@ -1139,53 +1326,20 @@ Set the video frame size. Default value is \f(CW\*(C`vga\*(C'\fR.
 .IP "\fBuse_shm\fR" 4
 .IX Item "use_shm"
 Use the MIT-SHM extension for shared memory. Default value is \f(CW1\fR.
-It may be necessary to disable it for remote displays.
-.SS "decklink"
-.IX Subsection "decklink"
-The decklink input device provides capture capabilities for Blackmagic
-DeckLink devices.
+It may be necessary to disable it for remote displays (legacy x11grab
+only).
 .PP
-To enable this input device, you need the Blackmagic DeckLink \s-1SDK\s0 and you
-need to configure with the appropriate \f(CW\*(C`\-\-extra\-cflags\*(C'\fR
-and \f(CW\*(C`\-\-extra\-ldflags\*(C'\fR.
-On Windows, you need to run the \s-1IDL\s0 files through \fBwidl\fR.
+\fI\fIgrab_x\fI \fIgrab_y\fI AVOption\fR
+.IX Subsection "grab_x grab_y AVOption"
 .PP
-DeckLink is very picky about the formats it supports. Pixel format is always
-uyvy422, framerate and video size must be determined for your device with
-\&\fB\-list_formats 1\fR. Audio sample rate is always 48 kHz and the number
-of channels currently is limited to 2 (stereo).
+The syntax is:
 .PP
-\fIOptions\fR
-.IX Subsection "Options"
-.IP "\fBlist_devices\fR" 4
-.IX Item "list_devices"
-If set to \fBtrue\fR, print a list of devices and exit.
-Defaults to \fBfalse\fR.
-.IP "\fBlist_formats\fR" 4
-.IX Item "list_formats"
-If set to \fBtrue\fR, print a list of supported formats and exit.
-Defaults to \fBfalse\fR.
-.PP
-\fIExamples\fR
-.IX Subsection "Examples"
-.IP "\(bu" 4
-List input devices:
-.Sp
 .Vb 1
-\&        ffmpeg \-f decklink \-list_devices 1 \-i dummy
+\&        \-grab_x <x_offset> \-grab_y <y_offset>
 .Ve
-.IP "\(bu" 4
-List supported formats:
-.Sp
-.Vb 1
-\&        ffmpeg \-f decklink \-list_formats 1 \-i \*(AqIntensity Pro\*(Aq
-.Ve
-.IP "\(bu" 4
-Capture video clip at 1080i50 (format 11):
-.Sp
-.Vb 1
-\&        ffmpeg \-f decklink \-i \*(AqIntensity Pro@11\*(Aq \-acodec copy \-vcodec copy output.avi
-.Ve
+.PP
+Set the grabbing region coordinates. They are expressed as offset from the top left
+corner of the X11 window. The default value is 0.
 .SH "OUTPUT DEVICES"
 .IX Header "OUTPUT DEVICES"
 Output devices are configured elements in FFmpeg that can write

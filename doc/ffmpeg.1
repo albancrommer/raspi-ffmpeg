@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "FFMPEG 1"
-.TH FFMPEG 1 "2015-03-17" " " " "
+.TH FFMPEG 1 " " " " " "
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -390,6 +390,10 @@ Match the stream by stream id (e.g. \s-1PID\s0 in MPEG-TS container).
 Matches streams with the metadata tag \fIkey\fR having the specified value. If
 \&\fIvalue\fR is not given, matches streams that contain the given tag with any
 value.
+.IP "\fBu\fR" 4
+.IX Item "u"
+Matches streams with usable configuration, the codec must be defined and the
+essential information such as video dimension or audio sample rate must be present.
 .Sp
 Note that in \fBffmpeg\fR, matching by metadata will only work properly for
 input files.
@@ -699,8 +703,44 @@ Possible flags for this option are:
 .IP "\fB\-opencl_bench\fR" 4
 .IX Item "-opencl_bench"
 .PD
-Benchmark all available OpenCL devices and show the results. This option
-is only available when FFmpeg has been compiled with \f(CW\*(C`\-\-enable\-opencl\*(C'\fR.
+This option is used to benchmark all available OpenCL devices and print the
+results. This option is only available when FFmpeg has been compiled with
+\&\f(CW\*(C`\-\-enable\-opencl\*(C'\fR.
+.Sp
+When FFmpeg is configured with \f(CW\*(C`\-\-enable\-opencl\*(C'\fR, the options for the
+global OpenCL context are set via \fB\-opencl_options\fR. See the
+\&\*(L"OpenCL Options\*(R" section in the ffmpeg-utils manual for the complete list of
+supported options. Amongst others, these options include the ability to select
+a specific platform and device to run the OpenCL code on. By default, FFmpeg
+will run on the first device of the first platform. While the options for the
+global OpenCL context provide flexibility to the user in selecting the OpenCL
+device of their choice, most users would probably want to select the fastest
+OpenCL device for their system.
+.Sp
+This option assists the selection of the most efficient configuration by
+identifying the appropriate device for the user's system. The built-in
+benchmark is run on all the OpenCL devices and the performance is measured for
+each device. The devices in the results list are sorted based on their
+performance with the fastest device listed first. The user can subsequently
+invoke \fBffmpeg\fR using the device deemed most appropriate via
+\&\fB\-opencl_options\fR to obtain the best performance for the OpenCL
+accelerated code.
+.Sp
+Typical usage to use the fastest OpenCL device involve the following steps.
+.Sp
+Run the command:
+.Sp
+.Vb 1
+\&        ffmpeg \-opencl_bench
+.Ve
+.Sp
+Note down the platform \s-1ID\s0 (\fIpidx\fR) and device \s-1ID\s0 (\fIdidx\fR) of the first
+i.e. fastest device in the list.
+Select the platform and device using the command:
+.Sp
+.Vb 1
+\&        ffmpeg \-opencl_options platform_idx=<pidx>:device_idx=<didx> ...
+.Ve
 .IP "\fB\-opencl_options options (\fR\fIglobal\fR\fB)\fR" 4
 .IX Item "-opencl_options options (global)"
 Set OpenCL environment options. This option is only available when
@@ -1570,6 +1610,13 @@ With \-map you can select from which stream the timestamps should be
 taken. You can leave either video or audio unchanged and sync the
 remaining stream(s) to the unchanged one.
 .RE
+.IP "\fB\-frame_drop_threshold\fR \fIparameter\fR" 4
+.IX Item "-frame_drop_threshold parameter"
+Frame drop threshold, which specifies how much behind video frames can
+be before they are dropped. In frame rate units, so 1.0 is one frame.
+The default is \-1.1. One possible usecase is to avoid framedrops in case
+of noisy timestamps or to increase frame drop precision in case of exact
+timestamps.
 .IP "\fB\-async\fR \fIsamples_per_second\fR" 4
 .IX Item "-async samples_per_second"
 Audio sync method. \*(L"Stretches/squeezes\*(R" the audio stream to match the timestamps,
@@ -1739,6 +1786,12 @@ This option enables or disables accurate seeking in input files with the
 \&\fB\-ss\fR option. It is enabled by default, so seeking is accurate when
 transcoding. Use \fB\-noaccurate_seek\fR to disable it, which may be useful
 e.g. when copying some streams and transcoding the others.
+.IP "\fB\-thread_message_queue\fR \fIsize\fR \fB(\fR\fIinput\fR\fB)\fR" 4
+.IX Item "-thread_message_queue size (input)"
+This option sets the maximum number of queued packets when reading from the
+file or device. With low latency / high rate live streams, packets may be
+discarded if they are not read in a timely manner; raising this value can
+avoid it.
 .IP "\fB\-override_ffserver (\fR\fIglobal\fR\fB)\fR" 4
 .IX Item "-override_ffserver (global)"
 Overrides the input specifications from \fBffserver\fR. Using this
@@ -2031,7 +2084,7 @@ combination with \-ss to start extracting from a certain point in time.
 For creating a video from many images:
 .Sp
 .Vb 1
-\&        ffmpeg \-f image2 \-i foo\-%03d.jpeg \-r 12 \-s WxH foo.avi
+\&        ffmpeg \-f image2 \-framerate 12 \-i foo\-%03d.jpeg \-s WxH foo.avi
 .Ve
 .Sp
 The syntax \f(CW\*(C`foo\-%03d.jpeg\*(C'\fR specifies to use a decimal number
@@ -2047,7 +2100,7 @@ For example, for creating a video from filenames matching the glob pattern
 \&\f(CW\*(C`foo\-*.jpeg\*(C'\fR:
 .Sp
 .Vb 1
-\&        ffmpeg \-f image2 \-pattern_type glob \-i \*(Aqfoo\-*.jpeg\*(Aq \-r 12 \-s WxH foo.avi
+\&        ffmpeg \-f image2 \-pattern_type glob \-framerate 12 \-i \*(Aqfoo\-*.jpeg\*(Aq \-s WxH foo.avi
 .Ve
 .IP "\(bu" 4
 You can put many streams of the same type in the output:

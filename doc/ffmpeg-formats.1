@@ -124,7 +124,7 @@
 .\" ========================================================================
 .\"
 .IX Title "FFMPEG-FORMATS 1"
-.TH FFMPEG-FORMATS 1 "2015-02-25" " " " "
+.TH FFMPEG-FORMATS 1 " " " " " "
 .\" For nroff, turn off justification.  Always turn off hyphenation; it makes
 .\" way too many mistakes in technical documents.
 .if n .ad l
@@ -161,7 +161,7 @@ Reduce buffering.
 .IP "\fBprobesize\fR \fIinteger\fR \fB(\fR\fIinput\fR\fB)\fR" 4
 .IX Item "probesize integer (input)"
 Set probing size in bytes, i.e. the size of the data to analyze to get
-stream information. A higher value will allow to detect more
+stream information. A higher value will enable detecting more
 information in case it is dispersed into the stream, but will increase
 latency. Must be an integer not lesser than 32. It is 5000000 by default.
 .IP "\fBpacketsize\fR \fIinteger\fR \fB(\fR\fIoutput\fR\fB)\fR" 4
@@ -218,7 +218,7 @@ Default is 0.
 .IP "\fBanalyzeduration\fR \fIinteger\fR \fB(\fR\fIinput\fR\fB)\fR" 4
 .IX Item "analyzeduration integer (input)"
 Specify how many microseconds are analyzed to probe the input. A
-higher value will allow to detect more accurate information, but will
+higher value will enable detecting more accurate information, but will
 increase latency. It defaults to 5,000,000 microseconds = 5 seconds.
 .IP "\fBcryptokey\fR \fIhexadecimal string\fR \fB(\fR\fIinput\fR\fB)\fR" 4
 .IX Item "cryptokey hexadecimal string (input)"
@@ -1202,8 +1202,7 @@ can be used:
 .IX Subsection "Options"
 .IP "\fBstart_number\fR" 4
 .IX Item "start_number"
-Start the sequence from the specified number. Default value is 1. Must
-be a non-negative number.
+Start the sequence from the specified number. Default value is 0.
 .IP "\fBupdate\fR" 4
 .IX Item "update"
 If set to 1, the filename will always be interpreted as just a
@@ -1533,6 +1532,10 @@ transponder in \s-1DVB\s0.
 .IP "\fB\-mpegts_service_id\fR \fInumber\fR" 4
 .IX Item "-mpegts_service_id number"
 Set the service_id (default 0x0001) also known as program in \s-1DVB\s0.
+.IP "\fB\-mpegts_service_type\fR \fInumber\fR" 4
+.IX Item "-mpegts_service_type number"
+Set the program service_type (default \fIdigital_tv\fR), see below
+a list of pre defined values.
 .IP "\fB\-mpegts_pmt_start_pid\fR \fInumber\fR" 4
 .IX Item "-mpegts_pmt_start_pid number"
 Set the first \s-1PID\s0 for \s-1PMT\s0 (default 0x1000, max 0x1f00).
@@ -1575,6 +1578,32 @@ usage) or restart ffmpeg instance, cyclically changing tables_version value:
 \&        ffmpeg \-i source2.ts \-codec copy \-f mpegts \-tables_version 1 udp://1.1.1.1:1111
 \&        ...
 .Ve
+.PP
+Option mpegts_service_type accepts the following values:
+.IP "\fBhex_value\fR" 4
+.IX Item "hex_value"
+Any hexdecimal value between 0x01 to 0xff as defined in \s-1ETSI\s0 300 468.
+.IP "\fBdigital_tv\fR" 4
+.IX Item "digital_tv"
+Digital \s-1TV\s0 service.
+.IP "\fBdigital_radio\fR" 4
+.IX Item "digital_radio"
+Digital Radio service.
+.IP "\fBteletext\fR" 4
+.IX Item "teletext"
+Teletext service.
+.IP "\fBadvanced_codec_digital_radio\fR" 4
+.IX Item "advanced_codec_digital_radio"
+Advanced Codec Digital Radio service.
+.IP "\fBmpeg2_digital_hdtv\fR" 4
+.IX Item "mpeg2_digital_hdtv"
+\&\s-1MPEG2\s0 Digital \s-1HDTV\s0 service.
+.IP "\fBadvanced_codec_digital_sdtv\fR" 4
+.IX Item "advanced_codec_digital_sdtv"
+Advanced Codec Digital \s-1SDTV\s0 service.
+.IP "\fBadvanced_codec_digital_hdtv\fR" 4
+.IX Item "advanced_codec_digital_hdtv"
+Advanced Codec Digital \s-1HDTV\s0 service.
 .PP
 Option mpegts_flags may take a set of such flags:
 .IP "\fBresend_headers\fR" 4
@@ -1666,13 +1695,19 @@ is 1 second. A value of 0 will fill all segments, making pages as large as
 possible. A value of 1 will effectively use 1 packet-per-page in most
 situations, giving a small seek granularity at the cost of additional container
 overhead.
+.IP "\fB\-serial_offset\fR \fIvalue\fR" 4
+.IX Item "-serial_offset value"
+Serial value from which to set the streams serial number.
+Setting it to different and sufficiently large values ensures that the produced
+ogg files can be safely chained.
 .SS "segment, stream_segment, ssegment"
 .IX Subsection "segment, stream_segment, ssegment"
 Basic stream segmenter.
 .PP
 This muxer outputs streams to a number of separate files of nearly
-fixed duration. Output filename pattern can be set in a fashion similar to
-\&\fBimage2\fR.
+fixed duration. Output filename pattern can be set in a fashion
+similar to \fBimage2\fR, or by using a \f(CW\*(C`strftime\*(C'\fR template if
+the \fBstrftime\fR option is enabled.
 .PP
 \&\f(CW\*(C`stream_segment\*(C'\fR is a variant of the muxer used to write to
 streaming output formats, i.e. which do not require global headers,
@@ -1865,6 +1900,12 @@ Wrap around segment index once it reaches \fIlimit\fR.
 .IP "\fBsegment_start_number\fR \fInumber\fR" 4
 .IX Item "segment_start_number number"
 Set the sequence number of the first segment. Defaults to \f(CW0\fR.
+.IP "\fBstrftime\fR \fI1|0\fR" 4
+.IX Item "strftime 1|0"
+Use the \f(CW\*(C`strftime\*(C'\fR function to define the name of the new
+segments to write. If this is selected, the output segment name must
+contain a \f(CW\*(C`strftime\*(C'\fR function template. Default value is
+\&\f(CW0\fR.
 .IP "\fBreset_timestamps\fR \fI1|0\fR" 4
 .IX Item "reset_timestamps 1|0"
 Reset timestamps at the begin of each segment, so that each segment
@@ -2073,9 +2114,9 @@ The file format is as follows:
 A file consists of a header and a number of metadata tags divided into sections,
 each on its own line.
 .IP "2." 4
-The header is a ';FFMETADATA' string, followed by a version number (now 1).
+The header is a \fB;FFMETADATA\fR string, followed by a version number (now 1).
 .IP "3." 4
-Metadata tags are of the form 'key=value'
+Metadata tags are of the form \fBkey=value\fR
 .IP "4." 4
 Immediately after header follows global metadata
 .IP "5." 4
@@ -2083,22 +2124,26 @@ After global metadata there may be sections with per\-stream/per\-chapter
 metadata.
 .IP "6." 4
 A section starts with the section name in uppercase (i.e. \s-1STREAM\s0 or \s-1CHAPTER\s0) in
-brackets ('[', ']') and ends with next section or end of file.
+brackets (\fB[\fR, \fB]\fR) and ends with next section or end of file.
 .IP "7." 4
 At the beginning of a chapter section there may be an optional timebase to be
-used for start/end values. It must be in form 'TIMEBASE=num/den', where num and
-den are integers. If the timebase is missing then start/end times are assumed to
+used for start/end values. It must be in form
+\&\fBTIMEBASE=\fR\fInum\fR\fB/\fR\fIden\fR, where \fInum\fR and \fIden\fR are
+integers. If the timebase is missing then start/end times are assumed to
 be in milliseconds.
+.Sp
 Next a chapter section must contain chapter start and end times in form
-\&'START=num', 'END=num', where num is a positive integer.
+\&\fBSTART=\fR\fInum\fR, \fBEND=\fR\fInum\fR, where \fInum\fR is a positive
+integer.
 .IP "8." 4
-Empty lines and lines starting with ';' or '#' are ignored.
+Empty lines and lines starting with \fB;\fR or \fB#\fR are ignored.
 .IP "9." 4
-Metadata keys or values containing special characters ('=', ';', '#', '\e' and a
-newline) must be escaped with a backslash '\e'.
+Metadata keys or values containing special characters (\fB=\fR, \fB;\fR,
+\&\fB#\fR, \fB\e\fR and a newline) must be escaped with a backslash \fB\e\fR.
 .IP "10." 4
-Note that whitespace in metadata (e.g. foo = bar) is considered to be a part of
-the tag (in the example above key is 'foo ', value is ' bar').
+Note that whitespace in metadata (e.g. \fBfoo = bar\fR) is considered to be
+a part of the tag (in the example above key is \fBfoo\fR , value is
+ \fBbar\fR).
 .PP
 A ffmetadata file might look like this:
 .PP
